@@ -1,0 +1,4 @@
+class CfgPatches
+{
+	class CodeLock{};
+};
