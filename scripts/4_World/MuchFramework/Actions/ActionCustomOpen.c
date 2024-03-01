@@ -49,7 +49,6 @@ class ActionCustomOpen: ActionInteractBase
 		if(mspitembase)
 		{	
 			mspitembase.Open();
-			return;
 		}
 	}
 };

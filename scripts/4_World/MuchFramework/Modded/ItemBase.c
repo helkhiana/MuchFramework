@@ -35,6 +35,11 @@ modded class ItemBase
 			return true;
 		}
 		return false;
+	}
+	
+	bool IsMspDismantleAllowed()
+	{   
+		return IsMspInvEmpty();
 	}	
 
 	override bool CanBePlaced(Man player, vector position)

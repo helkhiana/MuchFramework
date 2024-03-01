@@ -1,6 +1,6 @@
 modded class Hologram
 {
-	protected ref array<typename> m_MSPItemsCollision = { Msp_Kit, Msp_Storage_Base, Msp_Openable_Placeable_Base, Msp_InventoryStorage_Base, Msp_Floaties, Msp_Foldable_Item };
+	protected ref array<typename> m_MSPItemsCollision = { Msp_Kit, Msp_Storage_Base, Msp_Openable_Placeable_Base, Msp_InventoryStorage_Base, Msp_Foldable_Item };
 	protected ref array<string> m_MSPItemsHologram = { "Msp_Item", "Msp_Storage_Base", "Msp_InventoryStorage_Base", "Msp_Openable_Placeable_Base", "Msp_Floaties", "Msp_Foldable_Item" };
 	
 	override void UpdateHologram( float timeslice )
@@ -10,7 +10,26 @@ modded class Hologram
 		Msp_ItemBase container = Msp_ItemBase.Cast(m_Parent);
 		if(container)
 		{
-			vector containerPos = GetProjectionEntityPosition( m_Player ) + container.Get_ItemPlacingPos();
+			vector containerPos;
+			vector adjustedContainerPos;
+			//vector adjustedContainerOri;
+			bool not_snapped = true;
+			Msp_ItemBase itemBaseProjection = Msp_ItemBase.Cast(m_Projection);
+			if(itemBaseProjection)
+			{
+				vector pos;
+				if(itemBaseProjection.MspSnapToCeiling() && GetMspCeilingPosition(itemBaseProjection, 5.0, pos))
+				{
+					containerPos = pos;
+					not_snapped = false;
+				}
+				adjustedContainerPos = itemBaseProjection.Get_ItemAdjustedPlacingPos();
+				//adjustedContainerOri = itemBaseProjection.Get_ItemAdjustedPlacingOrientation();
+			}
+			if(not_snapped)
+			{
+				containerPos = GetProjectionEntityPosition( m_Player ) + container.Get_ItemPlacingPos() + adjustedContainerPos;
+			}
 			vector containerOrientation = AlignProjectionOnTerrain( timeslice ) + container.Get_ItemPlacingOrientation();
 			SetProjectionPosition( containerPos );
 			SetProjectionOrientation( containerOrientation );		
@@ -134,7 +153,7 @@ modded class Hologram
 				}
 
 				bool isFloating = SetHologramPosition(player.GetPosition(), minProjectionDistance, maxProjectionDistance, contactPosition);
-				SetIsFloating(isFloating);
+				SetIsFloating(isFloating);	
 				
 				m_FromAdjusted = from;
 
@@ -142,6 +161,66 @@ modded class Hologram
 			}
 		}
 		return super.GetProjectionEntityPosition(player);
+	}
+	
+	bool GetMspCeilingPosition(Msp_ItemBase entity, float height, out vector contact_pos ) 
+	{
+		vector from = entity.GetPosition();
+		vector to = "0 0 0";
+		vector ceiling = "0 0 0";
+		ceiling[1] = height;
+		to = from + ceiling;
+
+		vector contact_dir;
+		int geometry = ObjIntersectFire;
+		int contact_component;
+		//Print("got from " + from);
+		bool boo = DayZPhysics.RaycastRV( from, to, contact_pos, contact_dir, contact_component, /*hit_object*/NULL, NULL, entity, false, false, geometry );
+		//Print("got contact_pos " + contact_pos);
+		
+		if (boo)
+		{
+			Debug.DrawSphere(contact_pos , 0.05, Colors.GREEN, ShapeFlags.ONCE);
+			contact_pos[1] = contact_pos[1] - entity.GetMspCeilingSnapPos();
+			Debug.DrawSphere(contact_pos , 0.05, Colors.BLUE, ShapeFlags.ONCE);
+			//Print("adjusted contact_pos " + contact_pos);
+		}
+		else
+		{
+			Debug.DrawSphere(from , 0.05, Colors.RED, ShapeFlags.ONCE);
+		}
+		
+		return boo;
+	}
+	
+	bool GetMspWallPosition(Msp_ItemBase entity, float backchecksize, out vector contact_pos ) 
+	{
+		vector from = entity.GetPosition();
+		vector to = "0 0 0";
+		vector ceiling = "0 0 0";
+		ceiling[2] = backchecksize;
+		to = from + ceiling;
+
+		vector contact_dir;
+		int geometry = ObjIntersectFire;
+		int contact_component;
+		//Print("got from " + from);
+		bool boo = DayZPhysics.RaycastRV( from, to, contact_pos, contact_dir, contact_component, /*hit_object*/NULL, NULL, entity, false, false, geometry );
+		//Print("got contact_pos " + contact_pos);
+		
+		if (boo)
+		{
+			Debug.DrawSphere(contact_pos , 0.05, Colors.GREEN, ShapeFlags.ONCE);
+			contact_pos[2] = contact_pos[2] + 0.1;
+			Debug.DrawSphere(contact_pos , 0.05, Colors.BLUE, ShapeFlags.ONCE);
+			//Print("adjusted contact_pos " + contact_pos);
+		}
+		else
+		{
+			Debug.DrawSphere(from , 0.05, Colors.RED, ShapeFlags.ONCE);
+		}
+		
+		return boo;
 	}
 
  	// override bool IsFloating() 
@@ -154,17 +233,18 @@ modded class Hologram
 	// 	return super.IsFloating();
 	// }
 
-	// override void SetProjectionPosition( vector position )
-	// {	
-	// 	if (m_Parent.IsInherited(Msp_Kit) || m_Parent.IsInherited(Msp_Storage_Base) || m_Parent.IsInherited(Msp_Openable_Placeable_Base) && IsFloating())
-	// 	{ 
-	// 		vector itemPos = SetOnGroundOld( position ) + m_Parent.Get_ItemPlacingPos();
-	// 		m_Projection.SetPosition( itemPos );
-	// 		return;
-	// 	}
+	override void SetProjectionPosition( vector position )
+	{	
+		//if (m_Parent.IsInherited(Msp_Kit) || m_Parent.IsInherited(Msp_Storage_Base) || m_Parent.IsInherited(Msp_Openable_Placeable_Base) && IsFloating())
+		Msp_ItemBase itemBaseProjection = Msp_ItemBase.Cast(m_Projection);
+		if(itemBaseProjection && itemBaseProjection.MspSnapToCeiling())
+		{
+			m_Projection.SetPosition( position );
+			return;
+		}
 
-	// 	super.SetProjectionPosition(position);
-	// }
+		super.SetProjectionPosition(position);
+	}
 
 	// vector SetOnGroundOld( vector position )
 	// {

@@ -24,16 +24,7 @@ class MSP_StorageRestrictions
         "zeroy_salmon",
         "Bitterlings"
     };
-    static ref array<string> MakeACopyOfArray(array<string> OtherArray)
-    {
-        ref array<string> NewArray = new array<string>;
-        foreach( string item : OtherArray )
-		{
-            NewArray.Insert(item);
-        }
-        return NewArray;
-    }
-}
+};
 
 enum MUCH_RPC 
 {

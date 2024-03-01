@@ -1,5 +1,7 @@
 class PluginReadJson : PluginBase
 {
+    protected float version = -1;
+    
     [NonSerialized()]
 	private static const string m_profileFolder = "$profile:/";
     [NonSerialized()]
@@ -10,8 +12,8 @@ class PluginReadJson : PluginBase
 	protected string m_PrintName 		        = "YourConfigName";
     [NonSerialized()]
     protected string FULLPATH                     = "";
-    protected float version = -1;
-	
+
+#ifdef SERVER
 	override void OnInit()
 	{     
         if(!GetGame().IsServer())
@@ -53,7 +55,8 @@ class PluginReadJson : PluginBase
 		Save();
 	}
 
-    
+#endif
+
     void OnRPC(PlayerIdentity sender, Object target, int rpc_type, ParamsReadContext ctx)
 	{
 

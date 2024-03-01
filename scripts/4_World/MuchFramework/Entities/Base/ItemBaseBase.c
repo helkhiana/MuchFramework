@@ -2,6 +2,8 @@ class Msp_ItemBase : Container_Base
 {
 	protected ref array<string> m_AllowedMSPCargo = { };
 	protected string m_MSPCargoTagName = "isMedicalItem";
+	protected vector m_MSPAdjustedPlacingPosition = "0 0 0";
+	protected vector m_MSPAdjustedPlacingOrientation = "0 0 0";
 
 	override void EEInit()
 	{
@@ -150,5 +152,40 @@ class Msp_ItemBase : Container_Base
 	bool ShouldHideOtherProxies()
 	{		
 		return !GetMuchProxiesConfig().HideOtherProxies;
+	}
+
+	bool MspSnapToCeiling()
+	{
+		return false;
+	}
+
+	float GetMspCeilingSnapPos()
+	{
+		return 0.0;
+	}
+
+	bool MspSnapToWall()
+	{
+		return false;
+	}
+
+	vector Get_ItemAdjustedPlacingPos()
+	{	
+		return m_MSPAdjustedPlacingPosition;
+	}
+	
+	void Set_ItemAdjustedPlacingPos(vector adjustedVector)
+	{	
+		m_MSPAdjustedPlacingPosition = adjustedVector;
+	}
+
+	vector Get_ItemAdjustedPlacingOrientation()
+	{
+		return m_MSPAdjustedPlacingOrientation;
+	}
+
+	void Set_ItemAdjustedPlacingOrientation(vector adjustedVector)
+	{
+		m_MSPAdjustedPlacingOrientation = adjustedVector;
 	}
 };

@@ -1,9 +1,11 @@
+#ifdef SERVER
 class PluginWriteLog extends PluginBase
 {
 	private FileHandle m_LogFile;
 	private bool m_LogEnabled                   = false;
 	private static const string m_profileFolder = "$profile:";
 	protected string m_LogName       = "YourLogName_";
+	protected string m_LogFullFileName  = "TM_Trades_";
 	
 	int year, month, day, hour, minute, second;
 	string sYear, sMonth, sDay, sHour, sMinute, sSecond, currentDateTime, currentTime;
@@ -27,13 +29,7 @@ class PluginWriteLog extends PluginBase
         
 		//setting currentDateTime
 		SetCurrentTime();
-		string currentFileName = m_profileFolder + "/" + m_LogName + currentDateTime + ".log";
-	
-		// Create New Log
-		if (CreateNewLogFile(currentFileName))
-		{				
-			m_LogEnabled = true;
-		}
+		m_LogFullFileName = m_profileFolder + "/" + m_LogName + currentDateTime + ".log";
     }
 	
 	bool CreateNewLogFile(string logFilePath)
@@ -55,7 +51,16 @@ class PluginWriteLog extends PluginBase
 
 	void Log(string text)
 	{
-		if (GetGame().IsServer() && m_LogEnabled)
+		if(!m_LogEnabled)
+		{				
+			// Create New Log
+			if (CreateNewLogFile(m_LogFullFileName))
+			{				
+				m_LogEnabled = true;
+			}
+
+		}
+		if (m_LogEnabled)
 		{
 			SetCurrentTime();			
 			FPrintln(m_LogFile, currentTime + text);
@@ -105,3 +110,4 @@ class PluginWriteLog extends PluginBase
 		currentTime = sHour + ":" + sMinute + ":" + sSecond + " | ";
 	}
 };
+#endif

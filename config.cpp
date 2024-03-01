@@ -7,7 +7,6 @@ class CfgPatches
 		requiredVersion=0.1;
 		requiredAddons[]=
 		{
-			"CodeLock",
 			"DZ_Data"
 		};
 	};
@@ -29,16 +28,10 @@ class CfgMods
         version = "1.0"; 
         extra = 0;
         type = "mod";
-        
         dependencies[] = {"GameLib", "Game", "World", "Mission"};
         
         class defs
         {
-			class gameLibScriptModule
-			{
-				value = "";
-				files[] = {"MuchFramework/scripts/Common"};
-			};
 			class gameScriptModule
             {
                 value = "";
@@ -140,7 +133,7 @@ class CfgVehicles
 		scope=0;
 		displayName="Box Kit";
 		descriptionShort="A cardboard box used to transport small items. Place to deploy item inside. The items can be dismantled with a screwdriver, pliers or hammer after deployment.";
-		model="\MuchStuffPack\MSP_Storage_boxes\kitbox\kitbox.p3d";
+		model="\MuchFramework\data\kitbox\kitbox.p3d";
 		itemsCargoSize[]={0,0};
 		itemSize[]={6,4};
 		carveNavmesh=1;
@@ -157,8 +150,12 @@ class CfgVehicles
 		};
 		hiddenSelectionsTextures[]=
 		{
-			"MuchStuffPack\MSP_Storage_boxes\kitbox\kitbox_co.paa"
+			"MuchFramework\data\kitbox\kitbox_co.paa"
 		};		
+		hiddenSelectionsMaterials[]=
+		{
+			"MuchFramework\data\kitbox\kitbox.rvmat"
+		};	
 		class DamageSystem
 		{
 			class GlobalHealth
@@ -453,6 +450,20 @@ class CfgVehicles
 				animPeriod=0.0099999998;
 				initPhase=0;
 			};
+		};
+	};
+	
+    class Msp_Lamp_Base: Msp_Item
+	{
+		scope=0;
+		class EnergyManager
+		{
+			hasIcon=1;
+			energyUsagePerSecond=0.07;
+			cordTextureFile="DZ\gear\camping\Data\plug_yellow_CO.paa";
+			cordLength=5;
+			plugType=2;
+			updateInterval=50;
 		};
 	};
 };

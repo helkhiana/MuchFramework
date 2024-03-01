@@ -8,6 +8,7 @@ class ActionPackWithHandsCB : ActionContinuousBaseCB
 
 class ActionPackWithHands: ActionContinuousBase
 {
+	private ref array<typename> AllowedTypes = {Msp_Item, Msp_Openable_Base};
 	void ActionPackWithHands()
 	{
 		m_CallbackClass = ActionPackWithHandsCB;
@@ -36,8 +37,12 @@ class ActionPackWithHands: ActionContinuousBase
 			Msp_ItemBase myItem = Msp_ItemBase.Cast( target.GetObject() );
 			if(myItem)
 			{
-				if(!myItem.IsMspInvEmpty()) return false;				
-				if (myItem.IsInherited(Msp_Item) || myItem.IsInherited(Msp_Openable_Base) || myItem.IsInherited(Msp_Greenhouse_Base) && !myItem.IsInherited(Msp_Openable_Placeable_Base))								
+				if(!myItem.IsMspDismantleAllowed()) 
+				{
+					return false;
+				}
+
+				if (myItem.IsAnyInherited(AllowedTypes) && !myItem.IsInherited(Msp_Openable_Placeable_Base))								
 					return true;
 			}
 		}

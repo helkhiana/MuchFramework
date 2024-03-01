@@ -1,4 +1,4 @@
-class MSP_Proxies_Settings
+class MF_Proxies_Settings
 {    
     bool HideAllProxiesWhenClosed;
     bool HideWeaponProxies;
@@ -8,15 +8,16 @@ class MSP_Proxies_Settings
 
 class PluginMuchProxiesConfig : PluginReadJson
 {		
-    private ref MSP_Proxies_Settings proxies_settings;
+    private ref MF_Proxies_Settings proxies_settings;
 
 	void PluginMuchProxiesConfig()
 	{
         m_ConfigFolder = "MuchFramework";
 		m_ConfigName = "Proxies_Config";
-        m_PrintName = "MSP Server Config";
+        m_PrintName = "MuchFramework Proxies Config";
 	}	    
 
+#ifdef SERVER
 	override void Load()
     {
 		if (FileExist(FULLPATH))
@@ -36,7 +37,7 @@ class PluginMuchProxiesConfig : PluginReadJson
 
 	override void Default()
     {
-        proxies_settings = new MSP_Proxies_Settings();
+        proxies_settings = new MF_Proxies_Settings();
         proxies_settings.HideAllProxiesWhenClosed = true;
         proxies_settings.HideWeaponProxies = false;
         proxies_settings.HideClothingProxies = false;
@@ -52,9 +53,18 @@ class PluginMuchProxiesConfig : PluginReadJson
             Default();
             return; 
         }
-    }
+    }    
 
-	MSP_Proxies_Settings GetProxiesSettings()
+    void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
+    { 
+        if(!GetGame().IsServer())
+            return;
+        auto proxiesConfigParams = new Param1<MF_Proxies_Settings>(proxies_settings);
+        GetGame().RPCSingleParam(player, MUCH_RPC.RPC_CLIENT_SETCONFIG, proxiesConfigParams, true, identity);
+    }
+#endif
+
+	MF_Proxies_Settings GetProxiesSettings()
 	{
 		return proxies_settings;
 	}
@@ -67,7 +77,7 @@ class PluginMuchProxiesConfig : PluginReadJson
             {
                 if(!GetGame().IsClient())
                     return;
-				Param1<MSP_Proxies_Settings> proxiesConfig;
+				Param1<MF_Proxies_Settings> proxiesConfig;
                 if(!ctx.Read(proxiesConfig))
                     return;
                 proxies_settings = proxiesConfig.param1;
@@ -76,23 +86,15 @@ class PluginMuchProxiesConfig : PluginReadJson
 			}           
 		}
 	}
-
-    void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
-    { 
-        if(!GetGame().IsServer())
-            return;
-        auto proxiesConfigParams = new Param1<MSP_Proxies_Settings>(proxies_settings);
-        GetGame().RPCSingleParam(player, MUCH_RPC.RPC_CLIENT_SETCONFIG, proxiesConfigParams, true, identity);
-    }
 };
 
 
-static MSP_Proxies_Settings GetMuchProxiesConfig()
+static MF_Proxies_Settings GetMuchProxiesConfig()
 {
-    PluginMuchProxiesConfig msp_config = PluginMuchProxiesConfig.Cast(GetPlugin(PluginMuchProxiesConfig));
-    if(msp_config)
+    PluginMuchProxiesConfig proxies_config = PluginMuchProxiesConfig.Cast(GetPlugin(PluginMuchProxiesConfig));
+    if(proxies_config)
     {
-        return msp_config.GetProxiesSettings();
+        return proxies_config.GetProxiesSettings();
     }
     return null;
 }

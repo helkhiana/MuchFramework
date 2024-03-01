@@ -32,11 +32,12 @@ class PluginMuchCodelockConfig : PluginReadJson
 
 	void PluginMuchCodelockConfig()
 	{
-        m_ConfigFolder = "CodeLock";
-		m_ConfigName = "MSP_CodeLockConfig";
-        m_PrintName = "MSP Codelock Config";
+        m_ConfigFolder = "MuchFramework";
+		m_ConfigName = "MF_CodeLockConfig";
+        m_PrintName = "MF Codelock Config";
 	}	    
 
+#ifdef SERVER
 	override void Load()
     {
 		if (FileExist(FULLPATH))
@@ -76,6 +77,16 @@ class PluginMuchCodelockConfig : PluginReadJson
         }
     }
 
+    void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
+    { 
+        if(!GetGame().IsServer())
+            return;
+        auto proxiesConfigParams = new Param1<Much_Codelock_Settings>(settings);
+        GetGame().RPCSingleParam(player, MUCH_RPC.RPC_CLIENT_CODELOCK_SETCONFIG, proxiesConfigParams, true, identity);
+    }    
+
+#endif
+
     override void OnRPC(PlayerIdentity sender, Object target, int rpc_type, ParamsReadContext ctx)
 	{
 		switch (rpc_type)
@@ -94,19 +105,11 @@ class PluginMuchCodelockConfig : PluginReadJson
                 DeleteLockOnRaid = settings.DeleteLockOnRaid;
                 ToolDamageOnRaid = settings.ToolDamageOnRaid;
                 RaidTools = settings.RaidTools;
-                Print("[" + m_PrintName+ "] Received instance of config " + settings);
+                Print("[" + m_PrintName + "] Received instance of config " + settings);
 				break;
 			}           
 		}
 	}
-
-    void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
-    { 
-        if(!GetGame().IsServer())
-            return;
-        auto proxiesConfigParams = new Param1<Much_Codelock_Settings>(settings);
-        GetGame().RPCSingleParam(player, MUCH_RPC.RPC_CLIENT_CODELOCK_SETCONFIG, proxiesConfigParams, true, identity);
-    }    
 
 	float Get_RaidTimeInSeconds()
 	{

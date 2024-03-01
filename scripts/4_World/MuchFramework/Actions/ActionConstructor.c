@@ -1,4 +1,3 @@
-#ifdef MuchFramework
 modded class ActionConstructor 
 {
     override void RegisterActions(TTypenameArray actions)
@@ -20,4 +19,3 @@ modded class ActionConstructor
         #endif
     }
 };
-#endif

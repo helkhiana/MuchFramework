@@ -8,7 +8,7 @@ class ActionDismantleItemCB : ActionContinuousBaseCB
 
 class ActionDismantleItem: ActionContinuousBase
 {
-	private ref array<typename> AllowedTypes = {Msp_Item, Msp_Openable_Base, Msp_Greenhouse_Base};
+	private ref array<typename> AllowedTypes = {Msp_Item, Msp_Openable_Base};
 	void ActionDismantleItem()
 	{
 		m_CallbackClass = ActionDismantleItemCB;
@@ -42,7 +42,12 @@ class ActionDismantleItem: ActionContinuousBase
 					if(myItem.IsCodeLocked())
 						return false;
 				#endif
-				if(!myItem.IsMspInvEmpty()) return false;				
+
+				if(!myItem.IsMspDismantleAllowed()) 
+				{
+					return false;
+				}
+				
 				if (myItem.IsAnyInherited(AllowedTypes) && !myItem.IsInherited(Msp_Openable_Placeable_Base))								
 					return true;
 			}

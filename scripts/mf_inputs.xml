@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<modded_inputs>
+    <inputs>
+        <actions>
+            <input name="MF_RaiseHolo" loc="MF Raise Hologram" />
+            <input name="MF_LowerHolo" loc="MF Lower Hologram" />
+            <input name="MF_LeftHolo" loc="MF Move left Hologram" />
+            <input name="MF_RightHolo" loc="MF Move right Hologram" />
+            <input name="MF_BackHolo" loc="MF Move back Hologram" />
+            <input name="MF_ForwardHolo" loc="MF Move forward Hologram" />
+        </actions>
+    </inputs>
+    <preset>
+        <input name="MF_RaiseHolo">
+            <btn name="kEquals" />
+            <btn name="kPrior" />
+        </input>
+        <input name="MF_LowerHolo">
+            <btn name="kMinus" />
+            <btn name="kNext" />
+        </input>
+        <input name="MF_LeftHolo">
+            <btn name="kLeft" />
+        </input>
+        <input name="MF_RightHolo">
+            <btn name="kRight" />
+        </input>
+        <input name="MF_BackHolo">
+            <btn name="kDown" />
+        </input>
+        <input name="MF_ForwardHolo">
+            <btn name="kUp" />
+        </input>
+    </preset>
+</modded_inputs>

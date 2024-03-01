@@ -40,7 +40,6 @@ class ActionCustomClose: ActionInteractBase
 		if(mspitembase)		
 		{	
 			mspitembase.Close();
-			return;
 		}
 	}
 };

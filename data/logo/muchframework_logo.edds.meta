@@ -1,0 +1,16 @@
+MetaFileClass {
+ Name "{201DF09EF095E4D5}MuchFramework/data/logo/muchframework_logo.edds"
+ Author "desktop-c8ct5up"
+ ChangeDate 831696985
+ Configurations {
+  PNGResourceClass PC {
+   SourceFile "muchframework_logo.png"
+  }
+  PNGResourceClass XBOX_ONE : PC {
+  }
+  PNGResourceClass PS4 : PC {
+  }
+  PNGResourceClass LINUX : PC {
+  }
+ }
+}
