@@ -1,4 +1,3 @@
-#ifdef CodeLock
 class Much_Codelock_Settings
 {     
     float RaidTimeInSeconds;
@@ -155,5 +154,3 @@ static PluginMuchCodelockConfig GetMuchCodelockConfig()
     }
     return null;
 };
-
-#endif

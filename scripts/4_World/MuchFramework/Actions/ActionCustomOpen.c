@@ -37,6 +37,10 @@ class ActionCustomOpen: ActionInteractBase
 				if(mspitembase.IsCodeLocked())
 					return false;
 			#endif
+			#ifdef RA_BASEBUILDING
+				if(mspitembase.IsCodeLocked(player.GetIdentity()))
+					return false;
+			#endif
 			
 			return !mspitembase.IsOpen();
 		}

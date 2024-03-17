@@ -41,6 +41,14 @@ class ActionPackWithHands: ActionContinuousBase
 				{
 					return false;
 				}
+				#ifdef CodeLock
+					if(myItem.IsCodeLocked())
+						return false;
+				#endif
+				#ifdef RA_BASEBUILDING
+					if(myItem.IsCodeLocked(player.GetIdentity()))
+						return false;
+				#endif
 
 				if (myItem.IsAnyInherited(AllowedTypes) && !myItem.IsInherited(Msp_Openable_Placeable_Base))								
 					return true;

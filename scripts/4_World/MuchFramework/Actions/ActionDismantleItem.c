@@ -42,6 +42,10 @@ class ActionDismantleItem: ActionContinuousBase
 					if(myItem.IsCodeLocked())
 						return false;
 				#endif
+				#ifdef RA_BASEBUILDING
+					if(myItem.IsCodeLocked(player.GetIdentity()))
+						return false;
+				#endif
 
 				if(!myItem.IsMspDismantleAllowed()) 
 				{

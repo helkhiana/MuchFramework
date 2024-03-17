@@ -13,7 +13,6 @@ modded class PlayerBase
             }
         }      
             
-        #ifdef CodeLock
 		if(rpc_type == MUCH_RPC.RPC_CLIENT_CODELOCK_SETCONFIG)
         {
             PluginMuchCodelockConfig codelock_config = GetMuchCodelockConfig();
@@ -22,14 +21,16 @@ modded class PlayerBase
                 codelock_config.OnRPC(sender, this, rpc_type, ctx);
             }
         }  
-        #endif
 	}
 
-    #ifdef CodeLock
     override void SetActions(out TInputActionMap InputActionMap)
     {
         super.SetActions(InputActionMap);
-        AddAction(ActionRaidCodelockOnMSP, InputActionMap);        
+        #ifdef CodeLock
+        AddAction(ActionRaidCodelockOnMSP, InputActionMap);       
+        #endif 
+        #ifdef RA_BASEBUILDING
+        AddAction(ActionRaidRACodeLockOnMF, InputActionMap);       
+        #endif 
     }
-    #endif
 };

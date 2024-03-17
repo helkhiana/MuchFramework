@@ -132,6 +132,10 @@ class Msp_OpenableContainer : Msp_ItemBase
 	{	
 		if(category_name == "CodeLock")
 		{			
+			#ifdef RA_BASEBUILDING		
+				return GetMuchCodelockConfig() && GetMuchCodelockConfig().CanAttach();
+			#endif
+			
 			#ifdef CodeLock				
 				return GetMuchCodelockConfig() && GetMuchCodelockConfig().CanAttach();
 			#else
@@ -155,6 +159,19 @@ class Msp_OpenableContainer : Msp_ItemBase
     }
     #endif
 
+    #ifdef RA_BASEBUILDING
+    override bool CanReceiveAttachment(EntityAI attachment, int slotId)
+    {
+        RA_CodeLock c_Lock;
+        if (Class.CastTo(c_Lock, attachment))
+		{
+			return GetMuchCodelockConfig() && GetMuchCodelockConfig().CanAttach();
+		}
+
+        return super.CanReceiveAttachment(attachment, slotId);
+    }
+    #endif
+
 	override void SetActions()
 	{
 		super.SetActions();
@@ -164,6 +181,12 @@ class Msp_OpenableContainer : Msp_ItemBase
         AddAction(ActionInteractLockOnMSP);
         AddAction(ActionManageLockOnMSP);
         AddAction(ActionLockAdminOnMSP);
+        #endif
+		
+        #ifdef RA_BASEBUILDING
+        AddAction(ActionRACodeLockAuthenticateOnMF);
+        AddAction(ActionRACodeLockSetCodeOnMF);
+        AddAction(ActionRaidRACodeLockOnMF);
         #endif
 	}
 };

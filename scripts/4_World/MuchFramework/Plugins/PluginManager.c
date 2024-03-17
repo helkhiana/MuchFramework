@@ -4,8 +4,6 @@ modded class PluginManager
     {
         super.Init();
         RegisterPlugin("PluginMuchProxiesConfig", true, true);
-        #ifdef CodeLock
         RegisterPlugin("PluginMuchCodelockConfig", true, true);
-        #endif
     }
 };

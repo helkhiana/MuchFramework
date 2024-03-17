@@ -17,5 +17,12 @@ modded class ActionConstructor
         actions.Insert(ActionManageLockOnMSP);
         actions.Insert(ActionLockAdminOnMSP);
         #endif
+
+        
+        #ifdef RA_BASEBUILDING
+        actions.Insert(ActionRACodeLockAuthenticateOnMF);
+        actions.Insert(ActionRACodeLockSetCodeOnMF);
+        actions.Insert(ActionRaidRACodeLockOnMF);
+        #endif
     }
 };

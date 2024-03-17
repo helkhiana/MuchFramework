@@ -1,12 +1,14 @@
 class MSP_StorageRestrictions
 {
-    static ref array<string> MedicalCargoItems = {
+    static ref array<string> MedicalCargoItems = 
+    {
 		"BandageDressing" , "PurificationTablets", "CharcoalTablets", "PainkillerTablets", "VitaminBottle", 
 		"IodineTincture", "TetracyclineAntibiotics", "Epinephrine", "Morphine", "AntiChemInjector", 
 		"InjectionVial", "SalineBag", "StartKitIV", "SalineBagIV", "BloodBagEmpty", "BloodBagFull", "BloodBagIV",
 		"BloodTestKit", "Splint", "Thermometer", "Defibrillator", "DisinfectantSpray", "DisinfectantAlcohol", 
-        "SewingKit", "Rag", "WG_Medkit_Base", "WG_EmergencyBandage", "WG_Surgicalkit_Base" };
-
+        "SewingKit", "Rag", "WG_Medkit_Base", "WG_EmergencyBandage", "WG_Surgicalkit_Base", "GasMask_Filter",
+        "GasMask_Filter_Improvised", "SurgicalGloves_ColorBase" 
+    };
     static ref array<string> FishCargoItems = 
     {        
         "CarpFilletMeat",

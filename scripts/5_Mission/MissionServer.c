@@ -10,14 +10,11 @@ modded class MissionServer
         {
             proxies_config.Server_SendConfigToClient(player, identity);
         }
-
-        #ifdef CodeLock
 		PluginMuchCodelockConfig codelock_config = PluginMuchCodelockConfig.Cast(GetPlugin(PluginMuchCodelockConfig));
         if(codelock_config)
         {
             codelock_config.Server_SendConfigToClient(player, identity);
         }
-        #endif
 	}
 #endif
 };
