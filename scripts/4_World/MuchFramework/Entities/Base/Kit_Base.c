@@ -53,4 +53,11 @@ class Msp_Kit : Msp_ItemBase
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionPlaceObject);
 	}
+	
+	#ifdef RA_BASEBUILDING
+    override float GetCostToUpkeep()
+	{
+		return 0;
+	}
+	#endif
 };

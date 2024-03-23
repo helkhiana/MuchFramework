@@ -44,7 +44,13 @@ class ActionDismantleItem: ActionContinuousBase
 				#endif
 				#ifdef RA_BASEBUILDING
 					if(myItem.IsCodeLocked(player.GetIdentity()))
+					{
 						return false;
+					}
+					if(!RADismantleInTerritory(player, targetObject))
+					{
+						return false;
+					}
 				#endif
 
 				if(!myItem.IsMspDismantleAllowed()) 
@@ -58,6 +64,25 @@ class ActionDismantleItem: ActionContinuousBase
 		}
 		return false;
 	}
+
+	
+	#ifdef RA_BASEBUILDING
+	bool RADismantleInTerritory(PlayerBase player, Object target)
+	{
+		vector position = player.GetPosition();
+		if (target) 
+		{
+			position = target.GetPosition();
+		}
+		
+		if (TerritoryHQ.HasPermissionsAtPosition(player, position)) 
+		{
+			return true;
+		}
+		
+		return false;
+	}
+	#endif
 		
 	override void OnFinishProgressServer( ActionData action_data ) 
 	{

@@ -98,8 +98,12 @@ class ActionRaidRACodeLockOnMF : ActionContinuousBase
                 else 
                 {
                     code_lock.SetState(CodeLockState.PENDING);
+                    itemBase.Open();
                     if (GetMuchCodelockConfig().ShouldDeleteLockOnRaid())
-                        code_lock.Delete();                       
+                    {    
+                        action_data.m_Player.ServerDropEntity(code_lock);
+                        code_lock.Delete();
+                    }
 					
         			int toolDamage = GetMuchCodelockConfig().Get_ToolDamageOnRaid(); 
                     if (toolDamage > 0)

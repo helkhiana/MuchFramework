@@ -188,4 +188,12 @@ class Msp_ItemBase : Container_Base
 	{
 		m_MSPAdjustedPlacingOrientation = adjustedVector;
 	}
+
+
+	#ifdef RA_BASEBUILDING
+    override float GetCostToUpkeep()
+	{
+		return 0.00001;
+	}
+	#endif
 };

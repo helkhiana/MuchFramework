@@ -132,7 +132,7 @@ class CfgVehicles
 	{
 		scope=0;
 		displayName="Box Kit";
-		descriptionShort="A cardboard box used to transport small items. Place to deploy item inside. The items can be dismantled with a screwdriver, pliers or hammer after deployment.";
+		descriptionShort="A cardboard box used to transport base or furniture items. Place to deploy item inside. The items can be dismantled with a screwdriver, pliers or hammer after deployment.";
 		model="\MuchFramework\data\kitbox\kitbox.p3d";
 		itemsCargoSize[]={0,0};
 		itemSize[]={6,4};
