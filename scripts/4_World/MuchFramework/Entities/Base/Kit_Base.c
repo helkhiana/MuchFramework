@@ -52,6 +52,7 @@ class Msp_Kit : Msp_ItemBase
 
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionPlaceObject);
+		RemoveAction(ActionMFVSHandle);
 	}
 	
 	#ifdef RA_BASEBUILDING

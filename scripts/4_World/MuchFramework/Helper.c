@@ -110,4 +110,24 @@ class MF_Helper
 			return true;
 		}
 	}
+	
+	static void RemoveItemsInCargo(ItemBase item)
+	{
+		if (item)
+		{		
+			array<EntityAI> children = new array<EntityAI>;
+			item.GetInventory().EnumerateInventory(InventoryTraversalType.LEVELORDER, children);
+			int count = children.Count();
+			for (int i = 0; i < count; ++i)
+			{
+				EntityAI child = children.Get(i);
+				if ( child )
+				{
+					//If you copy this code again, youre a pos and karma will catch up
+					item.GetInventory().DropEntity(InventoryMode.SERVER, item, child);
+					GetGame().ObjectDelete(child);
+				}
+			}
+		}
+	}
 };

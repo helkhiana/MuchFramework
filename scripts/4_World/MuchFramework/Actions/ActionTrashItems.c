@@ -45,19 +45,7 @@ class ActionTrashItems: ActionContinuousBase
 		Msp_TrashCan myItem = Msp_TrashCan.Cast( action_data.m_Target.GetObject() );
 		if (myItem)
 		{		
-			array<EntityAI> children = new array<EntityAI>;
-			myItem.GetInventory().EnumerateInventory(InventoryTraversalType.LEVELORDER, children);
-			int count = children.Count();
-			for (int i = 0; i < count; ++i)
-			{
-				EntityAI child = children.Get(i);
-				if ( child )
-				{
-					//If you copy this code again, youre a pos and karma will catch up
-					myItem.GetInventory().DropEntity(InventoryMode.SERVER, myItem, child);
-					GetGame().ObjectDelete(child);
-				}
-			}
+			MF_Helper.RemoveItemsInCargo(myItem);
 		}	
 	}
 };
