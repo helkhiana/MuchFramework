@@ -13,6 +13,11 @@ class ActionMFVSHandle: ActionInteractBase
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
 	}
 
+    override typename GetInputType()
+    {
+        return ContinuousInteractActionInput;
+    }
+
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		if( !target ) return false;
@@ -38,6 +43,11 @@ class ActionMFVSHandle: ActionInteractBase
 				return true;
 			}
 
+			if(mspitembase.HasStoredCargo() && mspitembase.IsMFAutoStoreOnCloseEnabled())
+			{
+				return false;
+			}
+			
 			if(mspitembase.HasStoredCargo())
 			{
 				m_Text = "Restore contents";
@@ -51,14 +61,15 @@ class ActionMFVSHandle: ActionInteractBase
 	{
 		Msp_ItemBase mspitembase = Msp_ItemBase.Cast(action_data.m_Target.GetObject());
 		if(mspitembase)
-		{	
+		{				
 			if(mspitembase.HasStoredCargo())
 			{
 				mspitembase.RestoreMFInventory();
 			}
 			else
 			{
-				mspitembase.StoreMFInventory();
+				PlayerBase player = PlayerBase.Cast(action_data.m_Player);
+				mspitembase.StoreMFInventory(player);
 			}
 		}
 	}

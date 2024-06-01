@@ -31,6 +31,82 @@ static ref array<EntityAI> MakeACopyOfEntityAIArray(array<EntityAI> OtherArray)
 
 class MF_Helper
 {    
+	static bool IsFridgeOn(EntityAI parent)
+	{
+		bool isFridge = false;
+		EntityAI fridge;
+		if(parent.IsInherited(Msp_Fridge_Base))
+		{
+			isFridge = true;
+			fridge = parent;
+		}
+
+		if(!fridge)
+		{
+			array<string> OtherFridges = GetMFSettingsConfig().Fridge_Settings.OtherFridgeClasses;
+			foreach (string fridgeClassName : OtherFridges)
+			{
+				if (parent.IsKindOf(fridgeClassName))
+				{
+					isFridge = true;
+					fridge = parent;
+					break;
+				}
+			}
+		}
+		if(isFridge && fridge.HasEnergyManager())
+		{
+			return fridge.GetCompEM().IsWorking();
+		}
+		return false;
+	}
+
+    string GetDisplayNameByClassName(string classname)
+	{
+		TStringArray itemInfos = new TStringArray;
+		
+		string cfg = "CfgVehicles " + classname + " displayName";
+		string displayName = "";
+		GetGame().ConfigGetText(cfg, displayName);
+	
+		if (displayName == "")
+		{
+			cfg = "CfgAmmo " + classname + " displayName";
+			GetGame().ConfigGetText(cfg, displayName);
+		}
+		
+		if (displayName == "")
+		{
+			cfg = "CfgMagazines " + classname + " displayName";
+			GetGame().ConfigGetText(cfg, displayName);
+		}
+		
+		if (displayName == "")
+		{
+			cfg = "cfgWeapons " + classname + " displayName";
+			GetGame().ConfigGetText(cfg, displayName);
+		}
+	
+		if (displayName == "")
+		{
+			cfg = "CfgNonAIVehicles " + classname + " displayName";
+			GetGame().ConfigGetText(cfg, displayName);
+		}
+		
+		
+		return displayName;
+	}
+	
+	static void SendMessageToClient(Object receiver, string message ) //sends given string to client, don't use if not nescessary
+	{
+		PlayerBase man;
+        protected ref Param1<string> m_MessageParam = new Param1<string>(message);
+		if (GetGame().IsServer() && Class.CastTo(man, receiver) && m_MessageParam && receiver.IsAlive() && message != "")
+		{
+			GetGame().RPCSingleParam(man, ERPCs.RPC_USER_ACTION_MESSAGE, m_MessageParam, true, man.GetIdentity());
+		}
+	}
+
     static string SecondsToDays(int seconds)
     {
         string Date = "";
@@ -110,7 +186,7 @@ class MF_Helper
 			return true;
 		}
 	}
-	
+
 	static void RemoveItemsInCargo(ItemBase item)
 	{
 		if (item)
@@ -129,5 +205,87 @@ class MF_Helper
 				}
 			}
 		}
+	}
+
+	static bool CheckItemInventory(EntityAI entity, array<string> itemsBlacklist,  out string reasonItem)
+	{		
+		if(!entity.GetInventory())
+		{
+			return true;
+		}		
+
+		if(!CheckEntityCargo(entity, itemsBlacklist, reasonItem))
+		{
+			return false;
+		}
+		
+		if(!CheckEntityAtt(entity, itemsBlacklist, reasonItem))
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	static bool CheckEntityAtt(EntityAI entity, array<string> itemsBlacklist, out string reasonItem)
+	{		
+		int attCount = entity.GetInventory().AttachmentCount();
+		for (int i = 0; i < attCount; ++i) 
+		{
+			EntityAI att = entity.GetInventory().GetAttachmentFromIndex(i);
+			if (!att)
+				continue;
+
+			if(!CheckBlacklistedItem(att, itemsBlacklist, reasonItem))
+			{
+				return false;
+			}
+
+			if(!CheckItemInventory(att, itemsBlacklist, reasonItem))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	static bool CheckEntityCargo(EntityAI entity, array<string> itemsBlacklist, out string reasonItem)
+	{
+		if(!entity.GetInventory().GetCargo())
+		{
+			return true;
+		}
+
+		int cargoCount = entity.GetInventory().GetCargo().GetItemCount();
+		for (int i = 0; i < cargoCount; ++i) 
+		{
+			EntityAI cargoItem = entity.GetInventory().GetCargo().GetItem(i);
+			if (!cargoItem)
+				continue;
+				
+			if(!CheckBlacklistedItem(cargoItem, itemsBlacklist, reasonItem))
+			{
+				return false;
+			}
+			if(!CheckItemInventory(cargoItem, itemsBlacklist, reasonItem))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	static bool CheckBlacklistedItem(EntityAI item, array<string> itemsBlacklist, out string itemReason)
+	{
+		foreach(string blacklisted : itemsBlacklist)
+		{
+			//can we do this faster with typename?
+			if(item.IsKindOf(blacklisted))
+			{
+				itemReason = item.GetDisplayName();
+				return false;
+			}
+		}
+		return true;
 	}
 };

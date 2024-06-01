@@ -15,6 +15,11 @@ modded class MissionServer
         {
             codelock_config.Server_SendConfigToClient(player, identity);
         }
+		PluginMFSettingsConfig settings_config = PluginMFSettingsConfig.Cast(GetPlugin(PluginMFSettingsConfig));
+        if(settings_config)
+        {
+            settings_config.Server_SendConfigToClient(player, identity);
+        }
 	}
 #endif
 };

@@ -2,25 +2,24 @@ class Msp_OpenableContainer : Msp_ItemBase
 {
 	protected bool m_IsOpened;
 	protected bool m_IsOpenedLocal;
+	protected float m_LastCloseUnixTime = 0;
 	
 	void Msp_OpenableContainer()
 	{		
 		RegisterNetSyncVariableBool("m_IsSoundSynchRemote");
 		RegisterNetSyncVariableBool("m_IsOpened");
 	}
-	
-	override void EEInit()
-	{
-		super.EEInit();		
-        if(IsOpen())
-			Open();
-		else
-			Close();
-	}
 
 	override void Open()
 	{
+		#ifdef SERVER
+			if(IsMFAutoStoreOnCloseEnabled())
+			{
+				RestoreMFInventory();
+			}
+		#endif
 		m_IsOpened = true;
+		ResetAutoMFTimer();
 		SoundSynchRemote();
 		UpdateVisualState();
 		GetInventory().UnlockInventory(HIDE_INV_FROM_SCRIPT);
@@ -29,8 +28,18 @@ class Msp_OpenableContainer : Msp_ItemBase
 
 	override void Close()
 	{
-		super.Close();
+		super.Close();		
+		#ifdef SERVER
+			if(IsMFAutoStoreOnCloseEnabled())
+			{
+				if(CanStoreCargo())
+				{
+					GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(StoreMFInventory, 0.02, false);
+				}
+			}
+		#endif
 		m_IsOpened = false;
+		ResetAutoMFTimer();
 		SoundSynchRemote();
 		UpdateVisualState();
 		GetInventory().LockInventory(HIDE_INV_FROM_SCRIPT);
@@ -91,6 +100,59 @@ class Msp_OpenableContainer : Msp_ItemBase
 		
 		return true;
 	}
+
+	override void LoadMFStoreVariables()
+	{
+		super.LoadMFStoreVariables();
+		MF_VirtualStorage_Settings vsSettings = MFSettings.GetSettings().VirtualStorage;
+		if(vsSettings)
+		{
+			m_HasAutoStoreOnCloseEnabled = vsSettings.EnableAutoStoreOnClose;
+		}	
+		MF_Openable_Settings openSettings = MFSettings.GetSettings().Openables;
+		if(openSettings)
+		{
+			m_HasAutoCloseEnabled =  openSettings.EnableAutoClose;
+			m_AutoCloseTimerInSeconds = openSettings.AutoCloseTimerInSeconds;
+		}
+		SetSynchDirty();
+	}
+
+	override void ResetAutoMFTimer()
+	{		
+		super.ResetAutoMFTimer();
+		m_LastCloseUnixTime = 0;
+	}
+	
+	override void OnCEUpdate()
+	{
+		super.OnCEUpdate();
+		AutoCloseMF();
+	}
+	
+	override void AfterStoreLoad()
+	{
+		super.AfterStoreLoad();
+		Close();
+	}
+
+	void AutoCloseMF()
+	{
+		if(!IsMFAutoCloseTimerEnabled())
+		{
+			return;
+		}
+		if(!IsOpen())
+		{
+			return;
+		}
+		m_LastCloseUnixTime += m_ElapsedSinceLastUpdate;
+		if(m_LastCloseUnixTime >= m_AutoCloseTimerInSeconds)
+		{
+			ResetAutoMFTimer();
+			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(Close, 0.02, false);
+		}
+	}	
 
 	void UpdateVisualState()
     {

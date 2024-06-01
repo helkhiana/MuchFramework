@@ -1,5 +1,7 @@
 class PluginReadJson : PluginBase
 {
+	[NonSerialized()]
+	protected float wantedVersion = 1.0;
     protected float version = -1;
     
     [NonSerialized()]
@@ -51,10 +53,14 @@ class PluginReadJson : PluginBase
 
 	protected void Default()
     {
-		version = 1.0;
 		Save();
 	}
 
+    void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
+    { 
+        if(!GetGame().IsServer())
+            return;
+    }
 #endif
 
     void OnRPC(PlayerIdentity sender, Object target, int rpc_type, ParamsReadContext ctx)

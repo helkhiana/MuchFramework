@@ -4,23 +4,30 @@ modded class PlayerBase
 	{
 		super.OnRPC(sender, rpc_type, ctx);
 
-		if(rpc_type == MUCH_RPC.RPC_CLIENT_SETCONFIG)
+        switch (rpc_type)
         {
+        case MUCH_RPC.RPC_CLIENT_SETPROXIESCONFIG:
             PluginMuchProxiesConfig msp_config = PluginMuchProxiesConfig.Cast(GetPlugin(PluginMuchProxiesConfig));
             if(msp_config)
             {
                 msp_config.OnRPC(sender, this, rpc_type, ctx);
             }
-        }      
-            
-		if(rpc_type == MUCH_RPC.RPC_CLIENT_CODELOCK_SETCONFIG)
-        {
+            break;
+        case MUCH_RPC.RPC_CLIENT_CODELOCK_SETCONFIG:
             PluginMuchCodelockConfig codelock_config = GetMuchCodelockConfig();
             if(codelock_config)
             {
                 codelock_config.OnRPC(sender, this, rpc_type, ctx);
             }
-        }  
+            break;
+        case MUCH_RPC.RPC_CLIENT_SETSETTINGSCONFIG:
+            PluginMFSettingsConfig settings_config = PluginMFSettingsConfig.Cast(GetPlugin(PluginMFSettingsConfig));
+            if(settings_config)
+            {
+                settings_config.OnRPC(sender, this, rpc_type, ctx);
+            }
+            break;
+        } 
 	}
 
     override void SetActions(out TInputActionMap InputActionMap)

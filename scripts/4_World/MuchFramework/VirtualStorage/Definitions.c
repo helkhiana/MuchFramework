@@ -3,7 +3,25 @@ enum MF_Item_Type
     Regular,
     Magazine, // Magazine_Base do we separate in diff types
     Ammo, // Ammunition_Base
-    Weapon // special Pistol_Base Rifle_Base Launcher_Base    
+    Weapon, // special Pistol_Base Rifle_Base Launcher_Base
+	Energy, //items with energy manager
+    Vehicle, //CarScript special spawn with parts
+    Food, //Edible_Base
+    Bottle, //Bottle_Base
+    Special, //
+    Unknown //we don't know the type so it should be skipped? 
+};
+
+class MF_Food_State
+{
+	FoodStageType StageType;
+	FoodStageType LastStageType;
+	float DecayTimer;
+};
+
+class MF_Energy_State
+{
+	float EnergyAmount;
 };
 
 class MF_Cartridge_Info
@@ -58,9 +76,12 @@ class MF_Inventory
 	int row;
 	int col;
 	bool flipped;
+	int agents = 0;
 	MF_Item_Type itemType = MF_Item_Type.Regular;
 	ref MF_Weapon_State wpnState;
 	ref MF_Magazine_State magState;
+	ref MF_Energy_State energyState;
+	ref MF_Food_State foodState;
 
 	ref array<ref MF_Inventory> attachments = new array<ref MF_Inventory>;
 	ref array<ref MF_Inventory> cargo = new array<ref MF_Inventory>;
@@ -107,6 +128,7 @@ class MF_Inventory
 		{
 			/// WARNING: THE VANILLA CODE IS CURSED. IF THIS BREAKS, IT'S BOHEMIA'S FAULT.
 			item.SerializeNumericalVars(itemBaseVariables);
+			agents = item.GetAgents();
 		}
 		if(m_Entity.IsMagazine())
 		{
@@ -146,6 +168,35 @@ class MF_Inventory
 				magState.ammoCount = ammo.GetAmmoCount();
 			}
         }
+
+		if(m_Entity.HasEnergyManager())
+		{
+            itemType = MF_Item_Type.Energy;	
+			energyState = new MF_Energy_State();
+			energyState.EnergyAmount = m_Entity.GetCompEM().GetEnergy();
+		}
+
+        if(m_Entity.IsKindOf("Edible_Base"))
+        {
+            itemType = MF_Item_Type.Food;
+			foodState = new MF_Food_State();
+			Edible_Base edible = Edible_Base.Cast(m_Entity);
+			if(edible)
+			{
+				if (edible.GetFoodStage())
+				{
+					foodState.StageType = edible.GetFoodStageType();
+				}
+				foodState.LastStageType = edible.GetLastDecayStage();
+				foodState.DecayTimer = edible.GetDecayTimer();
+			}			
+        }
+
+        if(m_Entity.IsKindOf("Bottle_Base"))
+        {
+            itemType = MF_Item_Type.Bottle;
+        }
+
 
 		StoreCustomVariables();
 
@@ -259,8 +310,7 @@ class MF_Inventory
 		return RestoreEntity(null, entity, heal);
 	}
 
-	//we default heal to false so we only heal the first instance of attachments on the vehicle
-	//if we have heal cars on
+	//heal is for MCP feature
 	bool RestoreEntity(EntityAI parent = null, EntityAI entity = null, bool heal = false) 
 	{	
 		if(entity)
@@ -306,6 +356,7 @@ class MF_Inventory
 		{
 			/// WARNING: THE VANILLA CODE IS CURSED. IF THIS BREAKS, IT'S BOHEMIA'S FAULT.
 			item.DeSerializeNumericalVars(itemBaseVariables);
+			item.TransferAgents(agents);
 		}
 
 		RestoreCustomVariables();
@@ -337,6 +388,25 @@ class MF_Inventory
 		if(itemType == MF_Item_Type.Weapon)
 		{
 			RestoreWeapon();
+		}
+
+		if(itemType == MF_Item_Type.Energy)
+		{
+			m_Entity.GetCompEM().SetEnergy(energyState.EnergyAmount);
+		}
+
+		if(itemType == MF_Item_Type.Food)
+		{
+			Edible_Base edible = Edible_Base.Cast(m_Entity);
+			if(edible)
+			{
+				if (edible.GetFoodStage())
+				{
+					edible.GetFoodStage().ChangeFoodStage(foodState.StageType);
+				}
+				edible.MF_SetLastDecayStage(foodState.LastStageType);
+				edible.MF_SetDecayTimer(foodState.DecayTimer);
+			}
 		}
 
 		if (!RestoreCargo(m_Entity))
@@ -524,16 +594,19 @@ class MF_Inventory
 
 	void StoreCustomVariables()
 	{		
+		#ifdef MuchCarKey
 		MCK_CarKey_Base carkey = MCK_CarKey_Base.Cast(m_Entity);
 		if(carkey)
 		{
 			InitializeCustomVariables();
 			customVariables.itemIntVariables.Insert("MCK_CarKey_Base.m_MCKId", carkey.GetMCKId());
 		}
+		#endif
 	}
 
 	void RestoreCustomVariables()
 	{		
+		#ifdef MuchCarKey
 		MCK_CarKey_Base carkey = MCK_CarKey_Base.Cast(m_Entity);
 		if(carkey)
 		{
@@ -543,6 +616,7 @@ class MF_Inventory
 				carkey.SetNewMCKId(mckId);
 			}
 		}
+		#endif
 	}
 
 	protected void InitializeCustomVariables()

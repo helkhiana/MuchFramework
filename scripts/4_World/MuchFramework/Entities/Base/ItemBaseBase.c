@@ -6,21 +6,31 @@ class Msp_ItemBase : Container_Base
 	protected vector m_MSPAdjustedPlacingOrientation = "0 0 0";
 
 	
-	ref MF_Inventory inventory;
+	ref MF_Inventory m_MFInventory;
 	protected bool m_StoreIsDirty = false;
 	protected bool m_HasStoredCargo = false;
 	protected bool m_PrevHasStoredCargo = false;
+	protected float m_LastCargoStoreUnixTime = 0;
+	protected bool m_HasAutoStoreEnabled = false;
+	protected bool m_HasAutoStoreOnCloseEnabled = false;
+    protected int m_AutoStoreTimerInSeconds = -1;
+	protected bool m_HasAutoCloseEnabled = false;
+    protected int m_AutoCloseTimerInSeconds = -1;
+	protected PluginMFSettingsConfig MFSettings;
 
 	void Msp_ItemBase()
 	{		
 		RegisterNetSyncVariableBool("m_HasStoredCargo");
 		RegisterNetSyncVariableBool("m_PrevHasStoredCargo");
+		RegisterNetSyncVariableBool("m_HasAutoStoreEnabled");
+		RegisterNetSyncVariableBool("m_HasAutoStoreOnCloseEnabled");
 	}
 
 	override void EEInit()
 	{
-		super.EEInit();		
-		InitializeMFInventory();
+		super.EEInit();
+		
+		MFSettings = PluginMFSettingsConfig.Cast(GetPlugin(PluginMFSettingsConfig));
 		if(ConfigIsExisting("hasProxiesToHide") && ConfigGetBool("hasProxiesToHide"))
 		{
 			if(GetGame().IsClient())
@@ -38,6 +48,37 @@ class Msp_ItemBase : Container_Base
 			{
 				ShowHideMspProxies();
 			}	
+		}
+		#ifdef SERVER
+			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(this.LoadMFStoreVariables, 3000, false);
+		#endif
+	}
+
+	override void EEDelete(EntityAI parent)
+	{
+		super.EEDelete(parent);
+		DeleteMFInventoryFile();
+	}
+
+	void LoadMFStoreData()
+	{
+		if(IsMFVirtualStorageEnabled())
+		{
+			InitializeMFInventory();
+		}
+	}
+
+	void LoadMFStoreVariables()
+	{
+		if(IsMFVirtualStorageEnabled())
+		{
+			MF_VirtualStorage_Settings vsSettings = MFSettings.GetSettings().VirtualStorage;
+			if(vsSettings)
+			{
+				m_HasAutoStoreEnabled =  vsSettings.EnableAutoStoreTimer;
+				m_AutoStoreTimerInSeconds = vsSettings.AutoStoreTimerInSeconds;
+				SetSynchDirty();
+			}			
 		}
 	}
 
@@ -176,6 +217,10 @@ class Msp_ItemBase : Container_Base
 		return !GetMuchProxiesConfig().HideOtherProxies;
 	}
 
+    string GetNextInterchangeableItem()
+    {
+        return "";
+    }
 	bool MspSnapToCeiling()
 	{
 		return false;
@@ -221,37 +266,65 @@ class Msp_ItemBase : Container_Base
 	override void OnStoreSave(ParamsWriteContext ctx)
     {
         super.OnStoreSave(ctx);
-		//call store inventory
+		//call store m_MFInventory
 		if(m_StoreIsDirty && m_PrevHasStoredCargo != m_HasStoredCargo)
 		{
 			m_StoreIsDirty = false;
 			if(m_PrevHasStoredCargo == true)
 			{				
-				if(inventory && inventory.Restore(this))
-				{			
-					m_HasStoredCargo = false;
-					m_PrevHasStoredCargo = false;
-					DeleteMFInventory();
-					if(IsOpen())
-					{
-						MF_UnlockInventory();
-					}
-					delete inventory;
-					SetSynchDirty();
-					return;
-				}
-				MF_Helper.RemoveItemsInCargo(this);
+				DeleteMFInventoryFile();
+				m_HasStoredCargo = false;
+				m_PrevHasStoredCargo = false;
+				m_LastCargoStoreUnixTime = 0;
+				delete m_MFInventory;
+				SetSynchDirty();
+				return;
 			}
 			if(m_PrevHasStoredCargo == false)
 			{
-				SaveMFInventory();				
+				SaveMFInventoryFile();
 				m_HasStoredCargo = true;
-				m_PrevHasStoredCargo = true;
+				m_PrevHasStoredCargo = true;				
+				m_LastCargoStoreUnixTime = 0;
 			}
-			delete inventory;
+			delete m_MFInventory;
 			SetSynchDirty();
 		}
     }
+	
+	override void AfterStoreLoad()
+	{
+		super.AfterStoreLoad();
+		LoadMFStoreData();
+	}
+
+	override void OnCEUpdate()
+	{
+		super.OnCEUpdate();
+		AutoStoreMFCargo();
+	}
+
+	void ResetAutoMFTimer()
+	{		
+		m_LastCargoStoreUnixTime = 0;
+	}
+
+	void AutoStoreMFCargo()
+	{
+		if(IsMFAutoStoreOnCloseEnabled() && IsMFAutoCloseTimerEnabled())
+		{
+			return;
+		}
+		if(m_HasAutoStoreEnabled && CanStoreCargo())
+		{
+			m_LastCargoStoreUnixTime += m_ElapsedSinceLastUpdate;
+			if(m_LastCargoStoreUnixTime >= m_AutoStoreTimerInSeconds)
+			{
+				ResetAutoMFTimer();
+				GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(StoreMFInventory, 0.02, false);
+			}
+		} 
+	}
 
 	void MF_LockInventory()
 	{
@@ -275,9 +348,36 @@ class Msp_ItemBase : Container_Base
 	}
 
 	//Virtual Storage
+	bool IsMFVirtualStorageEnabled()
+	{
+		if(MFSettings && MFSettings.GetSettings())
+		{
+			MF_VirtualStorage_Settings settings = MFSettings.GetSettings().VirtualStorage;
+			if(settings)
+			{
+				return settings.EnableVirtualStorage;
+			}
+		}
+		return false;
+	}
+
+	bool IsMFAutoStoreOnCloseEnabled()
+	{
+		if(!IsMFVirtualStorageEnabled())
+		{
+			return false;
+		}
+		return m_HasAutoStoreOnCloseEnabled;
+	}
+
+	bool IsMFAutoCloseTimerEnabled()
+	{
+		return m_HasAutoCloseEnabled && !m_HasAutoStoreEnabled;
+	}
+
 	bool HasStoredCargo()
 	{
-		return m_HasStoredCargo || m_PrevHasStoredCargo;
+		return m_HasStoredCargo;
 	}
 
 	bool CanStoreCargo()
@@ -287,7 +387,19 @@ class Msp_ItemBase : Container_Base
 
 	bool CanDoVSAction()
 	{
-		return m_HasStoredCargo == m_PrevHasStoredCargo;
+		if(IsMFVirtualStorageEnabled())
+		{
+			if(HasStoredCargo())
+			{
+				return true;
+			}
+			if(m_HasAutoStoreOnCloseEnabled || m_HasAutoStoreEnabled)
+			{
+				return false;
+			}
+			return true;
+		}
+		return false;
 	}
 
 	override bool IsMspDismantleAllowed()
@@ -299,15 +411,42 @@ class Msp_ItemBase : Container_Base
 		return false;
 	}	
 
-	void StoreMFInventory() 
-	{		
-		inventory = new MF_Inventory();
-		if(inventory.Store(this))
+	void StoreMFInventory(PlayerBase player = null) 
+	{	
+		if(HasStoredCargo())
 		{
-			//SaveMFInventory();
-			m_PrevHasStoredCargo = m_HasStoredCargo;
-			m_HasStoredCargo = true;
+			return;
+		}
+		ref array<string> blacklist;
+		MF_VirtualStorage_Settings vsSettings = MFSettings.GetSettings().VirtualStorage;
+		if(vsSettings)
+		{
+			blacklist = vsSettings.ItemsBlacklist;
+		}
+		string item = "";
+		if(!MF_Helper.CheckItemInventory(this, blacklist, item))
+		{
+			string reason = MF_Helper.GetDate() + ": The item has the following blacklisted item in inventory." + " " + item;
+			if(player)
+			{
+				MF_Helper.SendMessageToClient(player, reason);
+			}
+			else
+			{
+				reason = MF_Helper.GetDate() + ": The item " + this + " has the following blacklisted item in inventory." + " " + item;
+				//Print(reason);
+			}
+			
+			return;
+		}
+
+		m_MFInventory = new MF_Inventory();
+		if(m_MFInventory.Store(this))
+		{
 			m_StoreIsDirty = true;
+			MF_Helper.RemoveItemsInCargo(this);
+			m_PrevHasStoredCargo = false;
+			m_HasStoredCargo = true;
 			if(IsOpen())
 			{
 				Close();
@@ -317,27 +456,55 @@ class Msp_ItemBase : Container_Base
 		}
 	}
 
-	void RestoreMFInventory() 
-	{		
-		LoadMFInventory();
-		if(inventory)
-		{			
-			m_PrevHasStoredCargo = m_HasStoredCargo;
-			m_HasStoredCargo = false;
-			m_StoreIsDirty = true;
+	void SetContainerAsStored()
+	{
+		m_PrevHasStoredCargo = true;
+		m_HasStoredCargo = true;
+		if(IsOpen())
+		{
+			Close();
+		}
+		MF_LockInventory();
+		SetSynchDirty();
+	}
+	void RestoreMFInventory()
+	{	
+		if(!HasStoredCargo())
+		{
+			return;
+		}
+		LoadMFInventoryFile();
+		if(m_MFInventory)
+		{
+			MF_UnlockInventory();
+			if(m_MFInventory && m_MFInventory.Restore(this))
+			{			
+				m_PrevHasStoredCargo = true;
+				m_HasStoredCargo = false;
+				m_StoreIsDirty = true;
+				if(IsOpen())
+				{
+					MF_UnlockInventory();
+				}
+				else
+				{
+					MF_LockInventory();
+				}
+				SetSynchDirty();
+				return;
+			}
+			MF_Helper.RemoveItemsInCargo(this);
 			SetSynchDirty();
 			return;
 		}
-		delete inventory;
+		delete m_MFInventory;
 	}
 
 	void InitializeMFInventory()
 	{
-		LoadMFInventory();
-		if(inventory)
+		if(LoadMFInventoryFile())
 		{	
-			m_PrevHasStoredCargo = true;
-			m_HasStoredCargo = true;
+			SetContainerAsStored();
 		}
 	}
 
@@ -358,25 +525,61 @@ class Msp_ItemBase : Container_Base
 		return folder + "/" + filename + ".json";
 	}
 
-	void LoadMFInventory() 
+	bool LoadMFInventoryFile() 
 	{
-		inventory = new MF_Inventory();
-		JsonFileLoader<MF_Inventory>.JsonLoadFile(GetFileName(), inventory);
+		string filename = GetFileName();
+		if(!FileExist(filename))
+		{
+			return false;
+		}
+		m_MFInventory = new MF_Inventory();
+		JsonFileLoader<MF_Inventory>.JsonLoadFile(filename, m_MFInventory);
+		return true;
 	}
 
-	void SaveMFInventory() 
+	void SaveMFInventoryFile() 
 	{
 		MF_Helper.RemoveItemsInCargo(this);
-		JsonFileLoader<MF_Inventory>.JsonSaveFile(GetFileName(), inventory);
+		JsonFileLoader<MF_Inventory>.JsonSaveFile(GetFileName(), m_MFInventory);
 	}
 
-	void DeleteMFInventory()
+	void DeleteMFInventoryFile()
 	{
 		string fileName = GetFileName();
 		if (FileExist(fileName))
 		{
 			DeleteFile(fileName);
 		}
+	}
+
+	override void EEItemAttached(EntityAI item, string slot_name)	
+	{
+		super.EEItemAttached(item, slot_name);
+		ResetAutoMFTimer();
+	}	
+	
+	override void EEItemDetached(EntityAI item, string slot_name)
+	{
+		super.EEItemDetached(item, slot_name);
+		ResetAutoMFTimer();
+	}	
+
+	override void EECargoIn(EntityAI item)
+	{
+		super.EECargoIn(item);
+		ResetAutoMFTimer();
+	}
+
+	override void EECargoOut(EntityAI item)
+	{
+		super.EECargoOut(item);
+		ResetAutoMFTimer();
+	}
+
+	override void EECargoMove(EntityAI item)
+	{
+		super.EECargoMove(item);
+		ResetAutoMFTimer();
 	}
 
 	override void SetActions()

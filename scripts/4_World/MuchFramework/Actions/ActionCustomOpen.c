@@ -42,7 +42,14 @@ class ActionCustomOpen: ActionInteractBase
 					return false;
 			#endif
 			
-			return (!mspitembase.IsOpen() && !mspitembase.HasStoredCargo());
+			if(!mspitembase.IsOpen())
+			{
+				if(mspitembase.IsMFAutoStoreOnCloseEnabled())
+				{
+					return true;
+				}
+				return !mspitembase.HasStoredCargo();
+			}
 		}
 		return false;
 	}
