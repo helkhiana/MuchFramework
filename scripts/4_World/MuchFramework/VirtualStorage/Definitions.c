@@ -428,12 +428,27 @@ class MF_Inventory
 	protected bool StoreAttachments() 
 	{
 		int attCount = m_Entity.GetInventory().AttachmentCount();
+
+		EntityAI codelock = NULL;
+		ItemBase itemBase = ItemBase.Cast(m_Entity);
+		if(itemBase)
+		{
+			#ifdef RA_BASEBUILDING			
+			codelock = itemBase.FindCodeLock();
+			#endif
+			#ifdef Codelock
+			codelock = itemBase.GetCodeLock();
+			#endif		
+		}
 		for (int i = 0; i < attCount; ++i) 
 		{
 			EntityAI att = m_Entity.GetInventory().GetAttachmentFromIndex(i);
 			if (!att)
 				continue;
-
+			if(codelock && codelock == att)
+			{
+				continue;
+			}
 			MF_Inventory attInv = new MF_Inventory(m_StoreCargo);
 			if (!attInv.StoreEntity(att))
 				return false;

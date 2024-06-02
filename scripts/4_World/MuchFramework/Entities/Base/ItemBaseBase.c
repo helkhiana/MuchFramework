@@ -81,6 +81,32 @@ class Msp_ItemBase : Container_Base
 			}			
 		}
 	}
+	
+    override bool CanPutIntoHands(EntityAI parent)
+	{
+		if (!super.CanPutInCargo(parent))
+		{
+			return false;
+		}
+		if(HasStoredCargo())
+		{
+			return false;
+		}
+
+		return true;
+    }
+	
+	override bool NameOverride(out string output)
+	{
+		if(HasStoredCargo())
+		{
+			string DisplayName;
+			GetGame().ObjectGetDisplayName(this, DisplayName);	
+			output = DisplayName + " [Stored]";
+			return true;
+		}
+		return super.NameOverride(output);
+	}
 
 	override bool CanPutInCargo(EntityAI parent)
 	{

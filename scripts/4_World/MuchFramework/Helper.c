@@ -192,13 +192,22 @@ class MF_Helper
 		if (item)
 		{		
 			array<EntityAI> children = new array<EntityAI>;
-			item.GetInventory().EnumerateInventory(InventoryTraversalType.LEVELORDER, children);
-			int count = children.Count();
-			for (int i = 0; i < count; ++i)
+			item.GetInventory().EnumerateInventory(InventoryTraversalType.LEVELORDER, children);		
+			EntityAI codelock = NULL;
+			#ifdef RA_BASEBUILDING			
+			codelock = item.FindCodeLock();
+			#endif
+			#ifdef Codelock
+			codelock = item.GetCodeLock();
+			#endif
+			foreach( EntityAI child : children )
 			{
-				EntityAI child = children.Get(i);
 				if ( child )
 				{
+					if(codelock && codelock == child)
+					{
+						continue;
+					}
 					//If you copy this code again, youre a pos and karma will catch up
 					item.GetInventory().DropEntity(InventoryMode.SERVER, item, child);
 					GetGame().ObjectDelete(child);
