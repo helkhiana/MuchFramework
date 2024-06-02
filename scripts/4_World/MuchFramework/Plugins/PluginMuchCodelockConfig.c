@@ -76,7 +76,7 @@ class PluginMuchCodelockConfig : PluginReadJson
         }
     }
 
-    void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
+    override void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
     { 
         if(!GetGame().IsServer())
             return;

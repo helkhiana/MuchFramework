@@ -9,6 +9,9 @@ modded class ActionConstructor
         actions.Insert(ActionFoldItem);
         actions.Insert(ActionPackWithHands);
         actions.Insert(ActionTrashItems);
+        actions.Insert(ActionMFVSHandle);
+        actions.Insert(ActionChangeType);
+        
         
         #ifdef CodeLock
         actions.Insert(ActionRaidCodelockOnMSP);

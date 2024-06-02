@@ -28,10 +28,18 @@ class MSP_StorageRestrictions
     };
 };
 
+class MSP_Constants
+{
+	static const string ProfileFolder = "$profile:/MuchFramework";
+	static const string VSFolder  = "/Storage";
+	static const string VSEntityFolder  = "/Entities";
+};
+
 enum MUCH_RPC 
 {
     DIRPC_START = 71666666,
     // Client RPC's
-    RPC_CLIENT_SETCONFIG,    
-    RPC_CLIENT_CODELOCK_SETCONFIG
+    RPC_CLIENT_SETPROXIESCONFIG,    
+    RPC_CLIENT_CODELOCK_SETCONFIG,
+    RPC_CLIENT_SETSETTINGSCONFIG
 };

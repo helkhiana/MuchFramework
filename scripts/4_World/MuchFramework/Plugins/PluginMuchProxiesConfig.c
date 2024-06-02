@@ -55,12 +55,12 @@ class PluginMuchProxiesConfig : PluginReadJson
         }
     }    
 
-    void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
+    override void Server_SendConfigToClient(PlayerBase player, PlayerIdentity identity)
     { 
         if(!GetGame().IsServer())
             return;
         auto proxiesConfigParams = new Param1<MF_Proxies_Settings>(proxies_settings);
-        GetGame().RPCSingleParam(player, MUCH_RPC.RPC_CLIENT_SETCONFIG, proxiesConfigParams, true, identity);
+        GetGame().RPCSingleParam(player, MUCH_RPC.RPC_CLIENT_SETPROXIESCONFIG, proxiesConfigParams, true, identity);
     }
 #endif
 
@@ -73,7 +73,7 @@ class PluginMuchProxiesConfig : PluginReadJson
 	{
 		switch (rpc_type)
 		{
-			case MUCH_RPC.RPC_CLIENT_SETCONFIG: 
+			case MUCH_RPC.RPC_CLIENT_SETPROXIESCONFIG: 
             {
                 if(!GetGame().IsClient())
                     return;

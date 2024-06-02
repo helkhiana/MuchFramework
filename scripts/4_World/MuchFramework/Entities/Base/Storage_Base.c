@@ -50,6 +50,11 @@ class Msp_Storage_Base: Msp_ItemBase
 
 class Msp_InventoryStorage_Base: Msp_ItemBase 
 {
+	override bool AreChildrenAccessible()
+	{
+		return true;
+	}
+
     override bool IsDeployable() 
     {
         return true;

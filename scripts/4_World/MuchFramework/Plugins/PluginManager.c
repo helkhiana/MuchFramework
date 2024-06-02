@@ -5,5 +5,6 @@ modded class PluginManager
         super.Init();
         RegisterPlugin("PluginMuchProxiesConfig", true, true);
         RegisterPlugin("PluginMuchCodelockConfig", true, true);
+        RegisterPlugin("PluginMFSettingsConfig", true, true);
     }
 };
