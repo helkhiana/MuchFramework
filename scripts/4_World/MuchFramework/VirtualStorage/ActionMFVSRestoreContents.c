@@ -1,6 +1,6 @@
-class ActionMFVSHandle: ActionInteractBase
+class ActionMFVSRestoreContents: ActionInteractBase
 {
-	void ActionMFVSHandle()
+	void ActionMFVSRestoreContents()
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_OPENDOORFW;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
@@ -33,21 +33,11 @@ class ActionMFVSHandle: ActionInteractBase
 				if(mspitembase.IsCodeLocked(player.GetIdentity()))
 					return false;
 			#endif
-			if(!mspitembase.CanDoVSAction())
+			if(!mspitembase.CanDoVSRestoreAction())
 			{
 				return false;
-			}
-			if(mspitembase.CanStoreCargo())
-			{
-				m_Text = "Store contents";
-				return true;
 			}
 
-			if(mspitembase.HasStoredCargo() && mspitembase.IsMFAutoStoreOnCloseEnabled())
-			{
-				return false;
-			}
-			
 			if(mspitembase.HasStoredCargo())
 			{
 				m_Text = "Restore contents";
@@ -61,16 +51,8 @@ class ActionMFVSHandle: ActionInteractBase
 	{
 		Msp_ItemBase mspitembase = Msp_ItemBase.Cast(action_data.m_Target.GetObject());
 		if(mspitembase)
-		{				
-			if(mspitembase.HasStoredCargo())
-			{
-				mspitembase.RestoreMFInventory();
-			}
-			else
-			{
-				PlayerBase player = PlayerBase.Cast(action_data.m_Player);
-				mspitembase.StoreMFInventory(player);
-			}
+		{			
+			mspitembase.RestoreMFInventory();
 		}
 	}
 };

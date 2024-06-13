@@ -197,16 +197,25 @@ class MF_Helper
 			#ifdef RA_BASEBUILDING			
 			codelock = item.FindCodeLock();
 			#endif
-			#ifdef Codelock
+			#ifdef CodeLock
 			codelock = item.GetCodeLock();
 			#endif
 			foreach( EntityAI child : children )
 			{
 				if ( child )
 				{
-					if(codelock && codelock == child)
+					//Doing this exception so we don't remove attached codelock
+					if(codelock && codelock == child && codelock.GetInventory())
 					{
-						continue;
+						InventoryLocation il = new InventoryLocation();
+						codelock.GetInventory().GetCurrentInventoryLocation(il);
+						if (il.IsValid()) 
+						{
+							if(il.GetType() == InventoryLocationType.ATTACHMENT) 
+							{
+								continue;
+							}
+						}
 					}
 					//If you copy this code again, youre a pos and karma will catch up
 					item.GetInventory().DropEntity(InventoryMode.SERVER, item, child);

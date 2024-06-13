@@ -46,13 +46,19 @@ class Msp_Kit : Msp_ItemBase
 		return "putDown_FenceKit_SoundSet";
 	}
 
+	override bool CanStoreCargo()
+	{
+		return false;
+	}
+	
 	override void SetActions()
 	{
 		super.SetActions();
 
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionPlaceObject);
-		RemoveAction(ActionMFVSHandle);
+		RemoveAction(ActionMFVSRestoreContents);
+		RemoveAction(ActionMFVSStoreContents);
 	}
 	
 	#ifdef RA_BASEBUILDING

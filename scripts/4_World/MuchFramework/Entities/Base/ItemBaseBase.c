@@ -84,7 +84,7 @@ class Msp_ItemBase : Container_Base
 	
     override bool CanPutIntoHands(EntityAI parent)
 	{
-		if (!super.CanPutInCargo(parent))
+		if (!super.CanPutIntoHands(parent))
 		{
 			return false;
 		}
@@ -124,6 +124,9 @@ class Msp_ItemBase : Container_Base
 
 	override bool CanReceiveItemIntoCargo (EntityAI item)
 	{
+		if (!super.CanReceiveItemIntoCargo(item))
+			return false;
+
 		if(HasStoredCargo())
 			return false;
 
@@ -133,7 +136,7 @@ class Msp_ItemBase : Container_Base
 			{
 				return IsAllowedMSPCargo(item) && super.CanReceiveItemIntoCargo(item);
 			}
-			return super.CanReceiveItemIntoCargo(item);
+			return true;
 		}
 
 		return false;
@@ -141,6 +144,9 @@ class Msp_ItemBase : Container_Base
 	
 	override bool CanSwapItemInCargo(EntityAI child_entity, EntityAI new_entity)
 	{
+		if (!super.CanSwapItemInCargo(child_entity,new_entity))
+			return false;
+
 		if(HasStoredCargo())
 			return false;
 
@@ -152,7 +158,7 @@ class Msp_ItemBase : Container_Base
 			}		
 			return false;	
 		}
-		return super.CanSwapItemInCargo(child_entity,new_entity);
+		return true;
 	}
 
 	bool IsAllowedMSPCargo(EntityAI item)
@@ -296,6 +302,7 @@ class Msp_ItemBase : Container_Base
 		if(m_StoreIsDirty && m_PrevHasStoredCargo != m_HasStoredCargo)
 		{
 			m_StoreIsDirty = false;
+			//if prev we had cargo means we restored 
 			if(m_PrevHasStoredCargo == true)
 			{				
 				DeleteMFInventoryFile();
@@ -306,6 +313,7 @@ class Msp_ItemBase : Container_Base
 				SetSynchDirty();
 				return;
 			}
+			// if prev is false means we stored
 			if(m_PrevHasStoredCargo == false)
 			{
 				SaveMFInventoryFile();
@@ -350,6 +358,10 @@ class Msp_ItemBase : Container_Base
 				GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(StoreMFInventory, 0.02, false);
 			}
 		} 
+		else
+		{
+			m_LastCargoStoreUnixTime = 0;
+		}
 	}
 
 	void MF_LockInventory()
@@ -408,22 +420,38 @@ class Msp_ItemBase : Container_Base
 
 	bool CanStoreCargo()
 	{
+		if(GetInventory().IsInCargo())
+		{
+			return false;
+		}
 		return !HasStoredCargo() && !IsMspInvEmpty();
 	}
 
-	bool CanDoVSAction()
+	bool CanDoVSStoreAction()
 	{
 		if(IsMFVirtualStorageEnabled())
 		{
 			if(HasStoredCargo())
 			{
-				return true;
+				return false;
 			}
-			if(m_HasAutoStoreOnCloseEnabled || m_HasAutoStoreEnabled)
+			if(m_HasAutoStoreOnCloseEnabled)
 			{
 				return false;
 			}
 			return true;
+		}
+		return false;
+	}
+
+	bool CanDoVSRestoreAction()
+	{
+		if(IsMFVirtualStorageEnabled())
+		{
+			if(HasStoredCargo() && IsOpen())
+			{
+				return true;
+			}
 		}
 		return false;
 	}
@@ -493,6 +521,7 @@ class Msp_ItemBase : Container_Base
 		MF_LockInventory();
 		SetSynchDirty();
 	}
+
 	void RestoreMFInventory()
 	{	
 		if(!HasStoredCargo())
@@ -529,8 +558,24 @@ class Msp_ItemBase : Container_Base
 	void InitializeMFInventory()
 	{
 		if(LoadMFInventoryFile())
-		{	
-			SetContainerAsStored();
+		{				
+			if(!m_HasStoredCargo)
+			{
+				m_PrevHasStoredCargo = true;
+				m_HasStoredCargo = true;
+				if(IsOpen())
+				{
+					Close();
+				}
+				MF_LockInventory();
+				//can delete after server update
+				if(GetInventory().IsInCargo())
+				{
+					RestoreMFInventory();
+					return;
+				}
+				SetSynchDirty();
+			}
 		}
 	}
 
@@ -612,6 +657,7 @@ class Msp_ItemBase : Container_Base
 	{
 		super.SetActions();
 
-		AddAction(ActionMFVSHandle);
+		AddAction(ActionMFVSStoreContents);
+		AddAction(ActionMFVSRestoreContents);
 	}
 };

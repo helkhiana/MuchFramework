@@ -50,6 +50,12 @@ class Msp_Storage_Base: Msp_ItemBase
 
 class Msp_InventoryStorage_Base: Msp_ItemBase 
 {
+	//uncomment this later?
+	// override bool CanStoreCargo()
+	// {
+	// 	return false;
+	// }
+
 	override bool AreChildrenAccessible()
 	{
 		return true;

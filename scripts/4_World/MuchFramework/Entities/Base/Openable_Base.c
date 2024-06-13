@@ -13,7 +13,7 @@ class Msp_OpenableContainer : Msp_ItemBase
 	override void Open()
 	{
 		#ifdef SERVER
-			if(IsMFAutoStoreOnCloseEnabled())
+			if(IsMFVirtualStorageEnabled())
 			{
 				RestoreMFInventory();
 			}

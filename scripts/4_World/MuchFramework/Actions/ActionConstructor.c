@@ -9,7 +9,8 @@ modded class ActionConstructor
         actions.Insert(ActionFoldItem);
         actions.Insert(ActionPackWithHands);
         actions.Insert(ActionTrashItems);
-        actions.Insert(ActionMFVSHandle);
+        actions.Insert(ActionMFVSRestoreContents);
+        actions.Insert(ActionMFVSStoreContents);
         actions.Insert(ActionChangeType);
         
         

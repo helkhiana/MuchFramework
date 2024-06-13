@@ -436,7 +436,7 @@ class MF_Inventory
 			#ifdef RA_BASEBUILDING			
 			codelock = itemBase.FindCodeLock();
 			#endif
-			#ifdef Codelock
+			#ifdef CodeLock
 			codelock = itemBase.GetCodeLock();
 			#endif		
 		}
