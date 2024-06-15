@@ -31,6 +31,18 @@ static ref array<EntityAI> MakeACopyOfEntityAIArray(array<EntityAI> OtherArray)
 
 class MF_Helper
 {    
+	static bool IsAnyKindOf(EntityAI ComparingEntity, array<string> ClassNamesArray)
+	{
+		foreach(string classname : ClassNamesArray)
+		{
+			if(ComparingEntity.IsKindOf(classname))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	static bool IsFridgeOn(EntityAI parent)
 	{
 		bool isFridge = false;

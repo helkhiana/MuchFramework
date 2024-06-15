@@ -1,6 +1,12 @@
 //This was created by Helkhiana to solve the CreateInInventory issues
 //All rights reserved
 //Redistribution of this code cannot be done without explicit permission from Helkhiana
+enum MF_InventorySearch
+{
+    Attachments,
+    DeepSearch
+};
+
 class MF_InventoryTransactions
 {
     static EntityAI CreateItem(string classname, notnull EntityAI target, out InventoryLocationType locationType, bool createOnGroundOnFailure = true)
@@ -85,7 +91,7 @@ class MF_InventoryTransactions
     //2. Try to move item in inventory of player directly
     //3. Try to move in attachments if #2 failed
     //4. Create on ground if allowed to and #3 failed
-    static EntityAI CreateItemInPlayerInventory(string classname, notnull PlayerBase target, out InventoryLocationType locationType, bool createOnGroundOnFailure = true)
+    static EntityAI CreateItemInPlayerInventory(string classname, notnull PlayerBase target, out InventoryLocationType locationType, bool createOnGroundOnFailure = true, MF_InventorySearch SearchType = MF_InventorySearch.Attachments)
     {        
         #ifdef SERVER
         //create item and
@@ -97,30 +103,57 @@ class MF_InventoryTransactions
             return null;
         }
 
-        EntityAI newItem = EntityAI.Cast(TM_InventoryTransactions.TryMoveLocalItem(newItemLocal, target, locationType));
+        EntityAI newItem = EntityAI.Cast(MF_InventoryTransactions.TryMoveLocalItem(newItemLocal, target, locationType));
         if (newItem)
         {
             return newItem;
         }
         else
         {
-            for (int i = 0; i < target.GetInventory().GetAttachmentSlotsCount(); i++)
-		    {
-                int slot = target.GetInventory().GetAttachmentSlotId(i);
-                EntityAI attachment = target.GetInventory().FindAttachment(slot);
-                if (attachment)
+            switch (SearchType)
+            {
+            case MF_InventorySearch.Attachments:
+                for (int i = 0; i < target.GetInventory().GetAttachmentSlotsCount(); i++)
                 {
-                    if(!attachment.GetInventory().GetCargo() && attachment.GetInventory().GetAttachmentSlotsCount() <= 0)
+                    int slot = target.GetInventory().GetAttachmentSlotId(i);
+                    EntityAI attachment = target.GetInventory().FindAttachment(slot);
+                    if (attachment)
                     {
-                        continue;
-                    }
-                    newItem = EntityAI.Cast(TM_InventoryTransactions.TryMoveLocalItem(newItemLocal, attachment, locationType));
-                    if (newItem)
-                    {
-                        return newItem;
+                        if(!attachment.GetInventory().GetCargo() && attachment.GetInventory().GetAttachmentSlotsCount() <= 0)
+                        {
+                            continue;
+                        }
+                        newItem = EntityAI.Cast(MF_InventoryTransactions.TryMoveLocalItem(newItemLocal, attachment, locationType));
+                        if (newItem)
+                        {
+                            return newItem;
+                        }
                     }
                 }
-            }
+                break;
+            case MF_InventorySearch.DeepSearch:
+                array<EntityAI> children = new array<EntityAI>;
+                target.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, children);
+                foreach (EntityAI child : children)
+                {
+                    if (child)
+                    {
+                        if(!child.GetInventory().GetCargo() && child.GetInventory().GetAttachmentSlotsCount() <= 0)
+                        {
+                            continue;
+                        }
+                        newItem = EntityAI.Cast(MF_InventoryTransactions.TryMoveLocalItem(newItemLocal, child, locationType));
+                        if (newItem)
+                        {
+                            return newItem;
+                        }
+                    }
+                }
+                break;
+            
+            default:
+                break;
+            } 
         }
 
         if(createOnGroundOnFailure && !newItem)

@@ -167,12 +167,8 @@ class Msp_ItemBase : Container_Base
 		{
 			return true;
 		}
-		foreach( string allowedCargo : m_AllowedMSPCargo )
-		{
-			if(item.IsKindOf(allowedCargo))
-				return true;
-		}
-		return false;
+		
+		return MF_Helper.IsAnyKindOf(this, m_AllowedMSPCargo);
 	}
 	
     bool IsMspFacingPlayer( PlayerBase player)
