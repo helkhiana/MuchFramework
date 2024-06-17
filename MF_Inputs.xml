@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<modded_inputs>
+    <inputs>
+        <actions>
+            <input name="CyclePlacingOptions" loc="MF Cycle Placing Options" />
+        </actions>
+    </inputs>
+    <preset>
+        <input name="CyclePlacingOptions">
+            <btn name="kMinus" />
+        </input>
+    </preset>
+</modded_inputs>

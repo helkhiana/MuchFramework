@@ -27,8 +27,40 @@ modded class PlayerBase
                 settings_config.OnRPC(sender, this, rpc_type, ctx);
             }
             break;
+        case MUCH_RPC.RPC_SERVER_CYCLEPLACINGOPTIONS:
+            if(GetGame().IsServer())
+            {
+                Msp_ItemBase itemBaseParent = Msp_ItemBase.Cast(GetItemInHands());
+                if(itemBaseParent)
+                {
+                    itemBaseParent.CyclePlacingOptions();
+                }               
+            }
+
+            break;
         } 
 	}
+    
+	// override void PlacingStartServer(ItemBase item)
+	// {
+	// 	super.PlacingStartServer(item);
+    //     if(m_HologramServer)
+    //     {
+    //         m_HologramServer.SetPlacingOptions(item);
+    //     }
+	// }
+
+	// override void PlacingStartLocal(ItemBase item)
+	// {
+	// 	super.PlacingStartLocal(item);
+	// 	if (GetGame().IsMultiplayer() && GetGame().IsServer())
+	// 		return;
+		
+    //     if(m_HologramLocal)
+    //     {
+    //         m_HologramLocal.RefreshVisual();
+    //     }
+	// }
 
     override void SetActions(out TInputActionMap InputActionMap)
     {

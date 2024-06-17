@@ -17,6 +17,7 @@ class Msp_ItemBase : Container_Base
 	protected bool m_HasAutoCloseEnabled = false;
     protected int m_AutoCloseTimerInSeconds = -1;
 	protected PluginMFSettingsConfig MFSettings;
+    int m_PlacingOptionIndex = -1;
 
 	void Msp_ItemBase()
 	{		
@@ -24,11 +25,28 @@ class Msp_ItemBase : Container_Base
 		RegisterNetSyncVariableBool("m_PrevHasStoredCargo");
 		RegisterNetSyncVariableBool("m_HasAutoStoreEnabled");
 		RegisterNetSyncVariableBool("m_HasAutoStoreOnCloseEnabled");
+		RegisterNetSyncVariableInt("m_PlacingOptionIndex", -1, 100);
 	}
 
 	override void EEInit()
 	{
 		super.EEInit();
+		
+		#ifdef SERVER
+		array<string> placingOptions = new array<string>;
+		if(ConfigIsExisting("placingOptions"))			
+		{
+			ConfigGetTextArray("placingOptions", placingOptions);
+			if(placingOptions && placingOptions.Count() > 0)
+			{
+				if(m_PlacingOptionIndex == -1)
+				{
+					m_PlacingOptionIndex = 0;
+					SetSynchDirty();
+				}
+			}
+		}
+		#endif
 		
 		MFSettings = PluginMFSettingsConfig.Cast(GetPlugin(PluginMFSettingsConfig));
 		if(ConfigIsExisting("hasProxiesToHide") && ConfigGetBool("hasProxiesToHide"))
@@ -647,6 +665,81 @@ class Msp_ItemBase : Container_Base
 	{
 		super.EECargoMove(item);
 		ResetAutoMFTimer();
+	}
+
+	void CyclePlacingOptions()
+	{	
+		array<string> placingOptions = new array<string>;
+		if(ConfigIsExisting("placingOptions"))			
+		{
+			ConfigGetTextArray("placingOptions", placingOptions);
+			if(placingOptions && placingOptions.Count() > 0)
+			{
+				if(m_PlacingOptionIndex == -1)
+				{
+					m_PlacingOptionIndex = 0;
+				}
+				m_PlacingOptionIndex++;
+				if(m_PlacingOptionIndex == placingOptions.Count())
+				{
+					m_PlacingOptionIndex = 0;
+				}
+				SetSynchDirty();
+			}
+		}
+	}
+
+	override void OnPlacementComplete(Man player, vector position = "0 0 0", vector orientation = "0 0 0")
+	{
+		super.OnPlacementComplete(player, position, orientation);
+		if (GetGame().IsServer())
+		{
+			array<string> placingOptions = new array<string>;
+			if(ConfigIsExisting("placingOptions"))			
+			{
+				ConfigGetTextArray("placingOptions", placingOptions);
+				PlayerBase playerPB = PlayerBase.Cast(player);
+				if(playerPB)
+				{
+					int index = m_PlacingOptionIndex;
+					if(index == -1)
+					{
+						index = 0;
+					}
+					if(placingOptions && placingOptions.Count() > index)
+					{
+						string itemToPlaceClassName = placingOptions[index];						
+						EntityAI newItem = EntityAI.Cast(GetGame().CreateObjectEx(itemToPlaceClassName, position, ECE_PLACE_ON_SURFACE));
+						newItem.SetPosition(position);
+						newItem.SetOrientation(orientation);
+						return;
+					}
+				}
+			}
+
+			if(IsBasebuildingKit())
+			{
+				EntityAI kitItem = EntityAI.Cast(GetGame().CreateObjectEx(Get_ItemName(), position, ECE_PLACE_ON_SURFACE));
+				kitItem.SetPosition(position);
+				kitItem.SetOrientation(orientation);
+			}
+		}
+
+		SetIsPlaceSound(true);
+	}	
+	
+	override bool IsBasebuildingKit()
+	{
+		array<string> placingOptions = new array<string>;
+		if(ConfigIsExisting("placingOptions"))			
+		{
+			ConfigGetTextArray("placingOptions", placingOptions);
+			if(placingOptions.Count() > 0)
+			{
+				return true;
+			}
+		}
+		return super.IsBasebuildingKit();
 	}
 
 	override void SetActions()

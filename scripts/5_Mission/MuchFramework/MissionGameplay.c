@@ -87,3 +87,48 @@
 //         }
 //     }
 // };
+
+modded class MissionGameplay 
+{	
+    private static const float m_MF_CycleInputDelay = 1.5;
+    private float m_MF_CycleInputDelay_Timer = 0.0;
+
+	bool IsInputKeyNameReleased(string inputName)
+	{
+		Input input = GetGame().GetInput();
+		if (input && !IsChatMenuOpen()) 
+		{
+			return input.LocalRelease( inputName );
+		}
+		return false;
+	}
+
+	bool IsChatMenuOpen()
+	{
+		return GetGame().GetUIManager().IsMenuOpen( MENU_CHAT_INPUT );
+	}
+
+	override void OnUpdate( float timeslice ) 
+	{
+		super.OnUpdate( timeslice );
+		PlayerBase playerPB = PlayerBase.Cast(GetGame().GetPlayer());
+		if (playerPB) 
+		{
+            m_MF_CycleInputDelay_Timer += timeslice;
+            if(m_MF_CycleInputDelay_Timer > m_MF_CycleInputDelay)
+            {
+                m_MF_CycleInputDelay_Timer = 0;
+                
+		        UIScriptedMenu menuOpened = m_UIManager.GetMenu();
+                if (menuOpened == NULL && playerPB.IsPlacingLocal())
+                {
+                    if(KeyState( KeyCode.KC_T ) > 0 )
+                    {
+						GetGame().RPCSingleParam(playerPB, MUCH_RPC.RPC_SERVER_CYCLEPLACINGOPTIONS, null, true, playerPB.GetIdentity());
+                        playerPB.GetHologramLocal().CyclePlacingOptionsClient();
+                    }
+                }
+            }
+		}
+	}
+};

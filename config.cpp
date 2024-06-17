@@ -29,7 +29,7 @@ class CfgMods
         extra = 0;
         type = "mod";
         dependencies[] = {"GameLib", "Game", "World", "Mission"};
-        
+		inputs = "MuchFramework/MF_Inputs.xml";        
         class defs
         {
 			class gameScriptModule

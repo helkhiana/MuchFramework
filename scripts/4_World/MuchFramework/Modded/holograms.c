@@ -3,6 +3,8 @@ modded class Hologram
 	protected ref array<typename> m_MSPItemsCollision = { Msp_Kit, Msp_Storage_Base, Msp_Openable_Placeable_Base, Msp_InventoryStorage_Base, Msp_Foldable_Item };
 	protected ref array<string> m_MSPItemsHologram = { "Msp_Item", "Msp_Storage_Base", "Msp_InventoryStorage_Base", "Msp_Openable_Placeable_Base", "Msp_Floaties", "Msp_Foldable_Item" };
 	
+    int m_PlacingOptionIndex = 0;
+
 	override void UpdateHologram( float timeslice )
 	{
 		super.UpdateHologram(timeslice);
@@ -40,9 +42,35 @@ modded class Hologram
 
 	override string GetProjectionName(ItemBase item)
 	{
+		Msp_ItemBase mspItemBase = Msp_ItemBase.Cast( item );
+		if(mspItemBase && mspItemBase.m_PlacingOptionIndex > -1)
+		{	
+			int index = mspItemBase.m_PlacingOptionIndex;
+			if(GetGame().IsServer())	
+			{
+				SetPlacingOptionIndex(mspItemBase.m_PlacingOptionIndex);
+			}
+			else
+			{
+				index = m_PlacingOptionIndex;
+			}
+			
+			array<string> placingOptions = new array<string>;			
+			if(item && item.ConfigIsExisting("placingOptions"))			
+			{
+				item.ConfigGetTextArray("placingOptions", placingOptions);
+			}
+			if(placingOptions && placingOptions.Count() > index)
+			{
+				return placingOptions[index];
+			}
+		}
+
 		Msp_Kit item_in_hands = Msp_Kit.Cast( item );
 		if ( item_in_hands )
+		{
 			return item_in_hands.Get_ItemName();
+		}
 		
 		return super.GetProjectionName(item);
 	}
@@ -59,38 +87,130 @@ modded class Hologram
 		super.EvaluateCollision();
 	}
 
+	//Client
+	void CyclePlacingOptionsClient()
+	{	
+		Msp_ItemBase mspItemBase = Msp_ItemBase.Cast( m_Parent );
+		if(mspItemBase)
+		{			
+			array<string> placingOptions = new array<string>;			
+			if(mspItemBase && mspItemBase.ConfigIsExisting("placingOptions"))			
+			{
+				mspItemBase.ConfigGetTextArray("placingOptions", placingOptions);
+			}
+			if(placingOptions && placingOptions.Count() > 0)
+			{
+				int newIndex = m_PlacingOptionIndex + 1;
+				if(newIndex == placingOptions.Count())
+				{
+					newIndex = 0;
+				}
+				SetPlacingOptionIndex(newIndex);		
+				RedoHologramEntity();
+			}
+		}	
+	}
+
+	void SetPlacingOptionIndex(int newIndex)
+	{
+		m_PlacingOptionIndex = newIndex;
+	}
+
+	void RedoHologramEntity()
+	{
+		vector pos = "0 0 0";
+		if (GetGame())
+		{
+			if (m_Projection)
+			{
+				pos = m_Projection.GetPosition();
+				GetGame().ObjectDelete(m_Projection);
+			}
+	
+			if (m_ProjectionTrigger)
+			{
+				GetGame().ObjectDelete(m_ProjectionTrigger);
+			}
+		}
+
+		EntityAI projectionEntity;
+		if (GetGame().IsMultiplayer() && GetGame().IsServer())
+		{	
+			projectionEntity = EntityAI.Cast(GetGame().CreateObjectEx(ProjectionBasedOnParent(), pos, ECE_PLACE_ON_SURFACE));
+			if(projectionEntity)
+			{
+				projectionEntity.SetAllowDamage(false);
+			}
+			SetProjectionEntity(projectionEntity);
+			SetAnimations();
+		}
+		else
+		{
+			projectionEntity = EntityAI.Cast(GetGame().CreateObjectEx(ProjectionBasedOnParent(), pos, ECE_TRACE|ECE_LOCAL));
+			if (projectionEntity == null)
+			{
+				ErrorEx(string.Format("Cannot create hologram entity from config class %1", ProjectionBasedOnParent()), ErrorExSeverity.WARNING);
+				return;
+			}
+
+			SetProjectionEntity(projectionEntity);
+			SetAnimations();
+			CreateTrigger();
+			RefreshTrigger();
+		}
+		
+		if (ItemBase.Cast(projectionEntity))
+		{
+			ItemBase.Cast(GetProjectionEntity()).SetIsHologram(true);
+		}
+		
+		string configPathSlope = string.Format("CfgVehicles %1 slopeTolerance", GetProjectionEntity().GetType());
+		if (GetGame().ConfigIsExisting(configPathSlope))
+		{
+			m_SlopeTolerance = GetGame().ConfigGetFloat(configPathSlope);
+		}
+		
+		string configPathAlign = string.Format("CfgVehicles %1 alignHologramToTerain", GetProjectionEntity().GetType());
+		if (GetGame().ConfigIsExisting(configPathAlign))
+		{
+			m_AlignToTerrain = GetGame().ConfigGetInt(configPathAlign);
+		}
+		
+		string configPathOrientationLimit = string.Format("CfgVehicles %1 yawPitchRollLimit", GetProjectionEntity().GetType());
+		if (GetGame().ConfigIsExisting(configPathOrientationLimit))
+		{
+			m_YawPitchRollLimit = GetGame().ConfigGetVector(configPathOrientationLimit);
+		}
+	}
 		
 	override void RefreshVisual()
 	{
 		if(m_Projection && m_MSPItemsHologram)
 		{			
-			foreach( string MSPItem : m_MSPItemsHologram )
+			if(MF_Helper.IsAnyKindOf(m_Projection, m_MSPItemsHologram))
 			{
-				if(m_Projection.IsKindOf(MSPItem))
-				{
-					string config_material = "CfgVehicles" + " " + m_Projection.GetType() + " " + "hologramMaterial";
-					string hologram_material = GetGame().ConfigGetTextOut( config_material );
-					string config_model = "CfgVehicles" + " " + m_Projection.GetType() + " " + "hologramMaterialPath";
-					string hologram_material_path = GetGame().ConfigGetTextOut( config_model ) + "\\" + hologram_material;
-					string selection_to_refresh;
-					int hidden_selection = 0;
-					static const string textureName = "#(argb,8,8,3)color(0.5,0.5,0.5,0.75,ca)";
-					
-					string config_path = "CfgVehicles" + " " + m_Projection.GetType() + " " + "hiddenSelections";
-					array<string> hidden_selection_array = new array<string>;
+				string config_material = "CfgVehicles" + " " + m_Projection.GetType() + " " + "hologramMaterial";
+				string hologram_material = GetGame().ConfigGetTextOut( config_material );
+				string config_model = "CfgVehicles" + " " + m_Projection.GetType() + " " + "hologramMaterialPath";
+				string hologram_material_path = GetGame().ConfigGetTextOut( config_model ) + "\\" + hologram_material;
+				string selection_to_refresh;
+				int hidden_selection = 0;
+				static const string textureName = "#(argb,8,8,3)color(0.5,0.5,0.5,0.75,ca)";
+				
+				string config_path = "CfgVehicles" + " " + m_Projection.GetType() + " " + "hiddenSelections";
+				array<string> hidden_selection_array = new array<string>;
 
-					GetGame().ConfigGetTextArray( config_path, hidden_selection_array );	
-					hologram_material_path += CorrectMaterialPathName();
-						
-					for (int i = 0; i < hidden_selection_array.Count(); ++i)
-					{
-						selection_to_refresh = hidden_selection_array.Get(i);
-						hidden_selection = GetHiddenSelection( selection_to_refresh );
-						m_Projection.SetObjectTexture( hidden_selection, textureName );
-						m_Projection.SetObjectMaterial( hidden_selection, hologram_material_path );
-					}
-					return;
+				GetGame().ConfigGetTextArray( config_path, hidden_selection_array );	
+				hologram_material_path += CorrectMaterialPathName();
+					
+				for (int i = 0; i < hidden_selection_array.Count(); ++i)
+				{
+					selection_to_refresh = hidden_selection_array.Get(i);
+					hidden_selection = GetHiddenSelection( selection_to_refresh );
+					// m_Projection.SetObjectTexture( hidden_selection, textureName );
+					// m_Projection.SetObjectMaterial( hidden_selection, hologram_material_path );
 				}
+				return;
 			}
 		}
 		else
@@ -104,61 +224,58 @@ modded class Hologram
 	//removed the part where it checks for the BBox
 	override protected vector GetProjectionEntityPosition( PlayerBase player )
 	{		
-		foreach( string MSPItem : m_MSPItemsHologram )
+		if(MF_Helper.IsAnyKindOf(m_Projection, m_MSPItemsHologram))
 		{
-			if(m_Projection.IsKindOf(MSPItem))
+			float minProjectionDistance;
+			float maxProjectionDistance; 
+			m_ContactDir = vector.Zero;
+			vector minMax[2];
+			float projectionRadius = GetProjectionRadius();
+			float cameraToPlayerDistance = vector.Distance(GetGame().GetCurrentCameraPosition(), player.GetPosition());
+
+			if (projectionRadius < SMALL_PROJECTION_RADIUS) // objects with radius smaller than 1m
 			{
-				float minProjectionDistance;
-				float maxProjectionDistance; 
-				m_ContactDir = vector.Zero;
-				vector minMax[2];
-				float projectionRadius = GetProjectionRadius();
-				float cameraToPlayerDistance = vector.Distance(GetGame().GetCurrentCameraPosition(), player.GetPosition());
-
-				if (projectionRadius < SMALL_PROJECTION_RADIUS) // objects with radius smaller than 1m
-				{
-					minProjectionDistance = SMALL_PROJECTION_RADIUS;
-					maxProjectionDistance = SMALL_PROJECTION_RADIUS * 2;
-				}
-				else
-				{
-					minProjectionDistance = projectionRadius;
-					maxProjectionDistance = projectionRadius * 2;
-					maxProjectionDistance = Math.Clamp(maxProjectionDistance, SMALL_PROJECTION_RADIUS, LARGE_PROJECTION_DISTANCE_LIMIT);
-				}
-				
-				vector from = GetGame().GetCurrentCameraPosition();
-				//adjusts raycast origin to player head approx. level (limits results behind the character)
-				if ( DayZPlayerCamera3rdPerson.Cast(player.GetCurrentCamera()) )
-				{
-					vector head_pos;
-					MiscGameplayFunctions.GetHeadBonePos(player,head_pos);
-					float dist = vector.Distance(head_pos,from);
-					from = from + GetGame().GetCurrentCameraDirection() * dist;
-				}
-				
-				vector to = from + (GetGame().GetCurrentCameraDirection() * (maxProjectionDistance + cameraToPlayerDistance));
-				vector contactPosition;
-				set<Object> hitObjects = new set<Object>();
-
-				DayZPhysics.RaycastRV(from, to, contactPosition, m_ContactDir, m_ContactComponent, hitObjects, player, m_Projection, false, false, ObjIntersectFire);
-				
-				static const float raycastOriginOffsetOnFail = 0.25;
-				static const float minDistFromStart = 0.01;
-				// Camera isn't correctly positioned in some cases, leading to raycasts hitting the object directly behind the camera
-				if ((hitObjects.Count() > 0) && (vector.DistanceSq(from, contactPosition) < minDistFromStart))
-				{
-					from = contactPosition + GetGame().GetCurrentCameraDirection() * raycastOriginOffsetOnFail;
-					DayZPhysics.RaycastRV(from, to, contactPosition, m_ContactDir, m_ContactComponent, hitObjects, player, m_Projection, false, false, ObjIntersectFire);
-				}
-
-				bool isFloating = SetHologramPosition(player.GetPosition(), minProjectionDistance, maxProjectionDistance, contactPosition);
-				SetIsFloating(isFloating);	
-				
-				m_FromAdjusted = from;
-
-				return contactPosition;
+				minProjectionDistance = SMALL_PROJECTION_RADIUS;
+				maxProjectionDistance = SMALL_PROJECTION_RADIUS * 2;
 			}
+			else
+			{
+				minProjectionDistance = projectionRadius;
+				maxProjectionDistance = projectionRadius * 2;
+				maxProjectionDistance = Math.Clamp(maxProjectionDistance, SMALL_PROJECTION_RADIUS, LARGE_PROJECTION_DISTANCE_LIMIT);
+			}
+			
+			vector from = GetGame().GetCurrentCameraPosition();
+			//adjusts raycast origin to player head approx. level (limits results behind the character)
+			if ( DayZPlayerCamera3rdPerson.Cast(player.GetCurrentCamera()) )
+			{
+				vector head_pos;
+				MiscGameplayFunctions.GetHeadBonePos(player,head_pos);
+				float dist = vector.Distance(head_pos,from);
+				from = from + GetGame().GetCurrentCameraDirection() * dist;
+			}
+			
+			vector to = from + (GetGame().GetCurrentCameraDirection() * (maxProjectionDistance + cameraToPlayerDistance));
+			vector contactPosition;
+			set<Object> hitObjects = new set<Object>();
+
+			DayZPhysics.RaycastRV(from, to, contactPosition, m_ContactDir, m_ContactComponent, hitObjects, player, m_Projection, false, false, ObjIntersectFire);
+			
+			static const float raycastOriginOffsetOnFail = 0.25;
+			static const float minDistFromStart = 0.01;
+			// Camera isn't correctly positioned in some cases, leading to raycasts hitting the object directly behind the camera
+			if ((hitObjects.Count() > 0) && (vector.DistanceSq(from, contactPosition) < minDistFromStart))
+			{
+				from = contactPosition + GetGame().GetCurrentCameraDirection() * raycastOriginOffsetOnFail;
+				DayZPhysics.RaycastRV(from, to, contactPosition, m_ContactDir, m_ContactComponent, hitObjects, player, m_Projection, false, false, ObjIntersectFire);
+			}
+
+			bool isFloating = SetHologramPosition(player.GetPosition(), minProjectionDistance, maxProjectionDistance, contactPosition);
+			SetIsFloating(isFloating);	
+			
+			m_FromAdjusted = from;
+
+			return contactPosition;
 		}
 		return super.GetProjectionEntityPosition(player);
 	}
