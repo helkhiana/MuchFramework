@@ -256,6 +256,7 @@ class MF_Inventory
 					wpn.ForceSyncSelectionState();
 					return magAtt;
 				}
+				Error(string.Format("MuchFramework: Couldn't create weapon magazine: %1 for weapon %2",typeName, Object.GetDebugName(parent)));
 				return NULL;
 			}
 		}
@@ -267,6 +268,8 @@ class MF_Inventory
 				{
 					return attachment;
 				}
+				
+				Error(string.Format("MuchFramework: Couldn't create attachment: %1 at index %2",typeName, index));
 				return NULL;
 			break;
 			case InventoryLocationType.CARGO:
@@ -275,6 +278,7 @@ class MF_Inventory
 				{
 					return cargoItem;
 				}
+				Error(string.Format("MuchFramework: Couldn't create entity in cargo: %1 at index %2 row %3 col %4 flipped %5",typeName, index, row, col, flipped));
 				return NULL;
 		}
 		return NULL;
@@ -452,7 +456,10 @@ class MF_Inventory
 			MF_Inventory attInv = new MF_Inventory(m_StoreCargo);
 			if (!attInv.StoreEntity(att))
 				return false;
-
+			
+			// #ifdef DIAG_DEVELOPER
+			// Print(string.Format("MF_Virtual: Entity: %1 added attachment %2", Object.GetDebugName(m_Entity), Object.GetDebugName(att)));
+			// #endif
 			attachments.Insert(attInv);
 		}
 
