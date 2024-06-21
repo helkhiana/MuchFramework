@@ -168,7 +168,7 @@ class Msp_ItemBase : Container_Base
 			return true;
 		}
 		
-		return MF_Helper.IsAnyKindOf(this, m_AllowedMSPCargo);
+		return MF_Helper.IsAnyKindOf(item, m_AllowedMSPCargo);
 	}
 	
     bool IsMspFacingPlayer( PlayerBase player)
