@@ -420,7 +420,26 @@ class Msp_ItemBase : Container_Base
 		{
 			return false;
 		}
+		if(IsVSBlackListed())
+		{
+			return false;
+		}
+		
 		return !HasStoredCargo() && !IsMspInvEmpty();
+	}
+
+	protected bool IsVSBlackListed()
+	{
+		if(MFSettings && MFSettings.GetSettings())
+		{
+			MF_VirtualStorage_Settings settings = MFSettings.GetSettings().VirtualStorage;
+			if(settings)
+			{
+				array<string> ContainerBlacklist = settings.ContainerBlacklist;
+				return MF_Helper.IsAnyKindOf(this, ContainerBlacklist);
+			}
+		}
+		return false;
 	}
 
 	bool CanDoVSStoreAction()
@@ -564,8 +583,8 @@ class Msp_ItemBase : Container_Base
 					Close();
 				}
 				MF_LockInventory();
-				//can delete after server update
-				if(GetInventory().IsInCargo())
+
+				if(GetInventory().IsInCargo() || IsVSBlackListed())
 				{
 					RestoreMFInventory();
 					return;
