@@ -420,19 +420,26 @@ class Msp_ItemBase : Container_Base
 		{
 			return false;
 		}
+		if(IsVSBlackListed())
+		{
+			return false;
+		}
+		
+		return !HasStoredCargo() && !IsMspInvEmpty();
+	}
+
+	protected bool IsVSBlackListed()
+	{
 		if(MFSettings && MFSettings.GetSettings())
 		{
 			MF_VirtualStorage_Settings settings = MFSettings.GetSettings().VirtualStorage;
 			if(settings)
 			{
 				array<string> ContainerBlacklist = settings.ContainerBlacklist;
-				if(MF_Helper.IsAnyKindOf(this, ContainerBlacklist))
-				{
-					return false;
-				}
+				return MF_Helper.IsAnyKindOf(this, ContainerBlacklist);
 			}
 		}
-		return !HasStoredCargo() && !IsMspInvEmpty();
+		return false;
 	}
 
 	bool CanDoVSStoreAction()
@@ -577,7 +584,7 @@ class Msp_ItemBase : Container_Base
 				}
 				MF_LockInventory();
 
-				if(GetInventory().IsInCargo() || !CanStoreCargo())
+				if(GetInventory().IsInCargo() || IsVSBlackListed())
 				{
 					RestoreMFInventory();
 					return;
