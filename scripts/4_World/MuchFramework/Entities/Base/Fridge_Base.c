@@ -48,6 +48,11 @@ class Msp_Fridge_Base : Msp_Openable_Base
 	{
 		return true;
 	}
+
+	override bool CanStoreCargo()
+	{
+		return false;
+	}
 	
 	//================================================================
 	// SOUNDS

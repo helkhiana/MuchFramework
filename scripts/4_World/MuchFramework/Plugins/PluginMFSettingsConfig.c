@@ -5,6 +5,7 @@ class MF_VirtualStorage_Settings
     bool EnableAutoStoreTimer = false;
     int AutoStoreTimerInSeconds = 600;
 	ref array<string> ItemsBlacklist = new array<string>;
+	ref array<string> ContainerBlacklist = new array<string>;
 };
 
 class MF_Openable_Settings
@@ -39,7 +40,7 @@ class PluginMFSettingsConfig : PluginReadJson
         m_ConfigFolder = "MuchFramework";
 		m_ConfigName = "Settings";
         m_PrintName = "MuchFramework General Settings Config";
-        wantedVersion =  1.0;
+        wantedVersion =  1.1;
 	}
 
 #ifdef SERVER
@@ -65,8 +66,11 @@ class PluginMFSettingsConfig : PluginReadJson
     }
 
 	override void Default()
-    {
-        m_Settings = new MF_Settings();
+    {        
+        if(!m_Settings)
+        {
+            m_Settings = new MF_Settings();
+        }
         version = wantedVersion;
 		Save();
 	}

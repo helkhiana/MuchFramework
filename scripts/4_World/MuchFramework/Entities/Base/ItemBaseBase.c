@@ -420,6 +420,18 @@ class Msp_ItemBase : Container_Base
 		{
 			return false;
 		}
+		if(MFSettings && MFSettings.GetSettings())
+		{
+			MF_VirtualStorage_Settings settings = MFSettings.GetSettings().VirtualStorage;
+			if(settings)
+			{
+				array<string> ContainerBlacklist = settings.ContainerBlacklist;
+				if(MF_Helper.IsAnyKindOf(this, ContainerBlacklist))
+				{
+					return false;
+				}
+			}
+		}
 		return !HasStoredCargo() && !IsMspInvEmpty();
 	}
 
@@ -564,8 +576,8 @@ class Msp_ItemBase : Container_Base
 					Close();
 				}
 				MF_LockInventory();
-				//can delete after server update
-				if(GetInventory().IsInCargo())
+
+				if(GetInventory().IsInCargo() || !CanStoreCargo())
 				{
 					RestoreMFInventory();
 					return;
