@@ -38,7 +38,16 @@ class ActionCustomClose: ActionInteractBase
 	{
 		Msp_ItemBase mspitembase = Msp_ItemBase.Cast(action_data.m_Target.GetObject());
 		if(mspitembase)		
-		{	
+		{						
+		#ifdef SERVER
+			if(mspitembase.IsMFAutoStoreOnCloseEnabled())
+			{
+				if(mspitembase.CanStoreCargo())
+				{
+					mspitembase.StoreMFInventory(action_data.m_Player);
+				}
+			}
+		#endif
 			mspitembase.Close();
 		}
 	}

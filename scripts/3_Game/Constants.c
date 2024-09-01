@@ -33,6 +33,7 @@ class MSP_Constants
 	static const string ProfileFolder = "$profile:/MuchFramework";
 	static const string VSFolder  = "/Storage";
 	static const string VSEntityFolder  = "/Entities";
+    static const int MF_NOTICE_UI  = 1614003;
 };
 
 enum MUCH_RPC 
@@ -41,5 +42,6 @@ enum MUCH_RPC
     // Client RPC's
     RPC_CLIENT_SETPROXIESCONFIG,    
     RPC_CLIENT_CODELOCK_SETCONFIG,
-    RPC_CLIENT_SETSETTINGSCONFIG
+    RPC_CLIENT_SETSETTINGSCONFIG,
+    RPC_CLIENT_SHOWWARNINGUI
 };

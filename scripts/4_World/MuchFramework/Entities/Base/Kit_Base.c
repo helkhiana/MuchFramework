@@ -1,5 +1,6 @@
 class Msp_Item : Msp_ItemBase
 {	
+
 	override bool CanPutInCargo(EntityAI parent)
 	{
 		return false;
@@ -18,6 +19,11 @@ class Msp_Kit : Msp_ItemBase
 		RegisterNetSyncVariableBool("m_IsSoundSynchRemote");
 	}
 
+	override void MF_DisableContainerDamage()
+	{
+		
+	}
+	
 	override void OnPlacementComplete(Man player, vector position = "0 0 0", vector orientation = "0 0 0")
 	{
 		super.OnPlacementComplete(player, position, orientation);

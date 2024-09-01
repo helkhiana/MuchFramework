@@ -27,7 +27,16 @@ modded class PlayerBase
                 settings_config.OnRPC(sender, this, rpc_type, ctx);
             }
             break;
+        case MUCH_RPC.RPC_CLIENT_SHOWWARNINGUI:
+            if (GetGame().IsClient() && GetGame().GetUIManager())
+            {
+                GetGame().GetUIManager().EnterScriptedMenu(MSP_Constants.MF_NOTICE_UI,null);                
+                //GetGame().GetUIManager().ShowScriptedMenu(noticeUI, NULL);
+                GetGame().GetMission().AddActiveInputExcludes({"menu"});
+            }
+            break;
         } 
+        
 	}
 
     override void SetActions(out TInputActionMap InputActionMap)

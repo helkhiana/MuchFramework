@@ -55,6 +55,12 @@ class ActionCustomOpen: ActionInteractBase
 		Msp_ItemBase mspitembase = Msp_ItemBase.Cast(action_data.m_Target.GetObject());
 		if(mspitembase)
 		{	
+		#ifdef SERVER
+			if(mspitembase.IsMFVirtualStorageEnabled())
+			{
+				mspitembase.RestoreMFInventory(action_data.m_Player);
+			}
+		#endif
 			mspitembase.Open();
 		}
 	}

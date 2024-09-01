@@ -18,7 +18,6 @@ class MF_Fridge_Settings
 {
     bool EnableFridgePreservation = false;
 	ref array<string> OtherFridgeClasses = new array<string>;
-    //TODO: Test ref array<typname> OtherFridgeClasses = new array<typname>;
     float PreservationMultiplier = 2.0;
 };
 

@@ -4,15 +4,17 @@ class Msp_ItemBase : Container_Base
 	protected string m_MSPCargoTagName = "isMedicalItem";
 	protected vector m_MSPAdjustedPlacingPosition = "0 0 0";
 	protected vector m_MSPAdjustedPlacingOrientation = "0 0 0";
+	protected vector m_HalfExtents;
 
-	
-	ref MF_Inventory m_MFInventory;
-	protected bool m_StoreIsDirty = false;
+	//synched vars
 	protected bool m_HasStoredCargo = false;
 	protected bool m_PrevHasStoredCargo = false;
-	protected float m_LastCargoStoreUnixTime = 0;
 	protected bool m_HasAutoStoreEnabled = false;
 	protected bool m_HasAutoStoreOnCloseEnabled = false;
+
+	ref MF_Inventory m_MFInventory;
+	protected bool m_StoreIsDirty = false;
+	protected float m_LastCargoStoreUnixTime = 0;
     protected int m_AutoStoreTimerInSeconds = -1;
 	protected bool m_HasAutoCloseEnabled = false;
     protected int m_AutoCloseTimerInSeconds = -1;
@@ -24,6 +26,18 @@ class Msp_ItemBase : Container_Base
 		RegisterNetSyncVariableBool("m_PrevHasStoredCargo");
 		RegisterNetSyncVariableBool("m_HasAutoStoreEnabled");
 		RegisterNetSyncVariableBool("m_HasAutoStoreOnCloseEnabled");
+		MF_DisableContainerDamage();
+		m_HalfExtents = Vector(0.2,0.5,0.4);
+	}
+
+	void MF_DisableContainerDamage()
+	{
+		ProcessInvulnerabilityCheck(GetInvulnerabilityTypeString());
+	}
+	
+	override string GetInvulnerabilityTypeString()
+	{
+		return "disableContainerDamage";
 	}
 
 	override void EEInit()
@@ -106,6 +120,14 @@ class Msp_ItemBase : Container_Base
 			return true;
 		}
 		return super.NameOverride(output);
+	}
+	
+	override void EEHealthLevelChanged(int oldLevel, int newLevel, string zone)
+	{
+		super.EEHealthLevelChanged(oldLevel,newLevel,zone);
+		
+		if (newLevel == GameConstants.STATE_RUINED && !GetHierarchyParent())
+			MiscGameplayFunctions.DropAllItemsInInventoryInBounds(this, m_HalfExtents);
 	}
 
 	override bool CanPutInCargo(EntityAI parent)
@@ -537,7 +559,7 @@ class Msp_ItemBase : Container_Base
 		SetSynchDirty();
 	}
 
-	void RestoreMFInventory()
+	void RestoreMFInventory(PlayerBase player)
 	{	
 		if(!HasStoredCargo())
 		{
@@ -547,8 +569,15 @@ class Msp_ItemBase : Container_Base
 		if(m_MFInventory)
 		{
 			MF_UnlockInventory();
-			if(m_MFInventory && m_MFInventory.Restore(this))
-			{			
+			if(m_MFInventory)
+			{
+				if(!m_MFInventory.Restore(this, player) && player)
+				{
+					//GetGame().RPCSingleParam(player, ERPCs.RPC_WARNING_ITEMDROP, null, true, player.GetIdentity());
+					GetGame().RPCSingleParam(player, MUCH_RPC.RPC_CLIENT_SHOWWARNINGUI, null, true, player.GetIdentity());
+					//string reason = MF_Helper.GetDate() + ": One or multiple items have been dropped on the ground because they couldn't be restored in the inventory.";
+					//MF_Helper.SendMessageToClient(player, reason);
+				}
 				m_PrevHasStoredCargo = true;
 				m_HasStoredCargo = false;
 				m_StoreIsDirty = true;
@@ -586,7 +615,7 @@ class Msp_ItemBase : Container_Base
 
 				if(GetInventory().IsInCargo() || IsVSBlackListed())
 				{
-					RestoreMFInventory();
+					RestoreMFInventory(NULL);
 					return;
 				}
 				SetSynchDirty();

@@ -34,7 +34,7 @@ class ActionTrashItems: ActionContinuousBase
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
 		Object targetObject = target.GetObject();
-        Msp_TrashCan myItem = Msp_TrashCan.Cast( targetObject );
+        Msp_ItemBase myItem = Msp_ItemBase.Cast( targetObject );
         if (myItem && !myItem.IsMspInvEmpty())
             return true; 
 		return false;
@@ -42,7 +42,7 @@ class ActionTrashItems: ActionContinuousBase
 		
 	override void OnFinishProgressServer( ActionData action_data )
 	{
-		Msp_TrashCan myItem = Msp_TrashCan.Cast( action_data.m_Target.GetObject() );
+		Msp_ItemBase myItem = Msp_ItemBase.Cast( action_data.m_Target.GetObject() );
 		if (myItem)
 		{		
 			MF_Helper.RemoveItemsInCargo(myItem);

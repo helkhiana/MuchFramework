@@ -62,15 +62,36 @@ class MF_Item_CustomVariables
 	ref map<string, string> itemStringVariables = new map<string, string>;
 };
 
+class MF_Container
+{
+	[NonSerialized()]
+	protected EntityAI m_Entity;
+	[NonSerialized()]
+	PlayerBase m_Player;
+	[NonSerialized()]
+	bool m_HadAFailure;
+	string typeName;
+	vector worldPosition;
+	ref map<string, float> damageZones = new map<string, float>;
+	ref array<float> itemBaseVariables = new array<float>;
+	ref MF_Item_CustomVariables customVariables;
+	ref array<ref MF_Inventory> attachments = new array<ref MF_Inventory>;
+	ref array<ref MF_Inventory> cargo = new array<ref MF_Inventory>;
+};
 
 class MF_Inventory
 {
 	[NonSerialized()]
 	protected EntityAI m_Entity;
 	[NonSerialized()]
+	PlayerBase m_Player;
+	[NonSerialized()]
+	bool m_HadAFailure;
+	[NonSerialized()]
 	protected bool m_StoreCargo;
 
 	string typeName;
+	vector worldPosition;
 	int index;
 	float health;
 	int row;
@@ -102,7 +123,7 @@ class MF_Inventory
 			return false;
 		m_Entity = entity;
 		typeName = m_Entity.GetType();
-
+		worldPosition = m_Entity.GetPosition();
 		if (!StoreCargo())
 		{
 			return false;
@@ -257,7 +278,6 @@ class MF_Inventory
 					return magAtt;
 				}
 				Error(string.Format("MuchFramework: Couldn't create weapon magazine: %1 for weapon %2",typeName, Object.GetDebugName(parent)));
-				return NULL;
 			}
 		}
 		switch (locationType) 
@@ -266,28 +286,35 @@ class MF_Inventory
 				EntityAI attachment = parent.GetInventory().CreateAttachmentEx(typeName, index);
 				if(attachment)
 				{
+					//Print(string.Format("MuchFramework: Created attachment: %1 at index %2",typeName, index));
 					return attachment;
-				}
-				
-				Error(string.Format("MuchFramework: Couldn't create attachment: %1 at index %2",typeName, index));
-				return NULL;
+				}	
+				//Print(string.Format("MuchFramework: Couldn't create attachment: %1 at index %2",typeName, index));
 			break;
 			case InventoryLocationType.CARGO:
 				EntityAI cargoItem = parent.GetInventory().CreateEntityInCargoEx(typeName, index, row, col, flipped);
 				if(cargoItem)
 				{
+					//Print(string.Format("MuchFramework: Created entity in cargo: %1 at index %2 row %3 col %4 flipped %5",typeName, index, row, col, flipped));
 					return cargoItem;
 				}
-				Error(string.Format("MuchFramework: Couldn't create entity in cargo: %1 at index %2 row %3 col %4 flipped %5",typeName, index, row, col, flipped));
-				return NULL;
+				//Print(string.Format("MuchFramework: Couldn't create entity in cargo: %1 at index %2 row %3 col %4 flipped %5",typeName, index, row, col, flipped));
 		}
-		return NULL;
+		//if we got here then there was an error. create on ground.
+		vector pos = parent.GetPosition();
+		if(m_Player)
+		{
+			pos = m_Player.GetPosition();
+		}
+		m_HadAFailure = true;
+		EntityAI groundItem = parent.SpawnEntityOnGroundPos(typeName, pos);
+		return groundItem;
 	}
 	
-	bool Restore(notnull EntityAI entity)
+	bool Restore(notnull EntityAI entity, PlayerBase player)
 	{	
 		m_Entity = entity;
-
+		m_Player = player;
 		if (!RestoreCargo(m_Entity))
 		{
 			return false;
@@ -301,7 +328,7 @@ class MF_Inventory
 		m_Entity.AfterStoreLoad();
 		m_Entity.SetSynchDirty();
 		
-		return true;
+		return !m_HadAFailure;
 	}
 
 	bool RestoreSubEntity(notnull EntityAI parent, bool heal = false) 
@@ -309,9 +336,12 @@ class MF_Inventory
 		return RestoreEntity(parent, null, heal);
 	}
 
-	bool RestoreParentEntity(notnull EntityAI entity, bool heal = false)
+	bool RestoreParentEntity(notnull EntityAI entity, PlayerBase player, bool heal = false)
 	{
-		return RestoreEntity(null, entity, heal);
+		m_Entity = entity;
+		m_Player = player;
+		RestoreEntity(null, entity, heal);
+		return !m_HadAFailure;
 	}
 
 	//heal is for MCP feature
@@ -488,7 +518,7 @@ class MF_Inventory
 				if (!attInv.StoreEntity(att))
 					return false;
 	
-				cargo.Insert(attInv);
+				UniqueCargoInsert(attInv);
 			}
 		}		
 
@@ -499,9 +529,14 @@ class MF_Inventory
 	{
 		for (int i = 0; i < attachments.Count(); ++i)
 		{
-			if (!attachments[i].RestoreSubEntity(parent, heal))
+			if(m_Player)
 			{
-				return false;
+				attachments[i].m_Player = m_Player;
+			}
+			attachments[i].RestoreSubEntity(parent, heal);
+			if(!m_HadAFailure &&  attachments[i].m_HadAFailure)
+			{
+				m_HadAFailure = true;
 			}
 		}
 
@@ -512,13 +547,36 @@ class MF_Inventory
 	{
 		for (int i = 0; i < cargo.Count(); ++i)
 		{
+			if(m_Player)
+			{
+				cargo[i].m_Player = m_Player;
+			}
 			if (!cargo[i].RestoreSubEntity(parent))
 			{
 				return false;
 			}
+			if(!m_HadAFailure && cargo[i].m_HadAFailure)
+			{
+				m_HadAFailure = true;
+			}
 		}
 
 		return true;
+	}
+
+	protected void UniqueCargoInsert(MF_Inventory inv)
+	{
+		foreach(MF_Inventory storedCargo : cargo)
+		{
+			if(storedCargo)
+			{
+				if(storedCargo.col == inv.col && storedCargo.row == inv.row)
+				{
+					return;
+				}
+			}
+		}
+		cargo.Insert(inv);
 	}
 
 	protected void StoreWeapon()

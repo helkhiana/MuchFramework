@@ -3,7 +3,10 @@ class Msp_OpenableContainer : Msp_ItemBase
 	protected bool m_IsOpened;
 	protected bool m_IsOpenedLocal;
 	protected float m_LastCloseUnixTime = 0;
-	
+	protected string m_MF_OpenSoundSet = "";
+	protected string m_MF_CloseSoundSet = "";
+	protected vector m_MF_OpenCloseSoundPosition = "0 0 0";
+
 	void Msp_OpenableContainer()
 	{		
 		RegisterNetSyncVariableBool("m_IsSoundSynchRemote");
@@ -12,12 +15,6 @@ class Msp_OpenableContainer : Msp_ItemBase
 
 	override void Open()
 	{
-		#ifdef SERVER
-			if(IsMFVirtualStorageEnabled())
-			{
-				RestoreMFInventory();
-			}
-		#endif
 		m_IsOpened = true;
 		ResetAutoMFTimer();
 		SoundSynchRemote();
@@ -28,16 +25,7 @@ class Msp_OpenableContainer : Msp_ItemBase
 
 	override void Close()
 	{
-		super.Close();		
-		#ifdef SERVER
-			if(IsMFAutoStoreOnCloseEnabled())
-			{
-				if(CanStoreCargo())
-				{
-					GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(StoreMFInventory, 0.02, false);
-				}
-			}
-		#endif
+		super.Close();
 		m_IsOpened = false;
 		ResetAutoMFTimer();
 		SoundSynchRemote();
@@ -174,10 +162,30 @@ class Msp_OpenableContainer : Msp_ItemBase
 	
 	void SoundOpenPlay()
 	{
+		if(m_MF_OpenSoundSet != "")
+		{
+			vector soundPos = GetPosition();
+			if(m_MF_OpenCloseSoundPosition != "0 0 0")
+			{
+				soundPos = m_MF_OpenCloseSoundPosition;
+			}
+			EffectSound sound = SEffectManager.PlaySound( m_MF_OpenSoundSet , soundPos );
+			sound.SetSoundAutodestroy( true );
+		}
 	}
 	
 	void SoundClosePlay()
 	{
+		if(m_MF_CloseSoundSet != "")
+		{
+			vector soundPos = GetPosition();
+			if(m_MF_OpenCloseSoundPosition != "0 0 0")
+			{
+				soundPos = m_MF_OpenCloseSoundPosition;
+			}
+			EffectSound sound = SEffectManager.PlaySound( m_MF_CloseSoundSet , soundPos );
+			sound.SetSoundAutodestroy( true );
+		}
 	}
 	
 	override bool IsContainer()

@@ -230,8 +230,7 @@ class MF_Helper
 						}
 					}
 					//If you copy this code again, youre a pos and karma will catch up
-					item.GetInventory().DropEntity(InventoryMode.SERVER, item, child);
-					GetGame().ObjectDelete(child);
+					child.DeleteSafe();
 				}
 			}
 		}
