@@ -80,6 +80,19 @@ class Msp_ItemBase : Container_Base
 		{
 			InitializeMFInventory();
 		}
+		else
+		{			
+			//restore after disabling it
+			if(LoadMFInventoryFile())
+			{				
+				if(!m_HasStoredCargo)
+				{
+					m_PrevHasStoredCargo = true;
+					m_HasStoredCargo = true;
+					RestoreMFInventory(NULL);
+				}
+			}
+		}
 	}
 
 	void LoadMFStoreVariables()

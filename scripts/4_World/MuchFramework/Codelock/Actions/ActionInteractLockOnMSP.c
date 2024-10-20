@@ -111,6 +111,14 @@ class ActionInteractLockOnMSP : ActionInteractBase
                     if (codelock.IsOwner(identity.GetId()) || codelock.IsGuest(identity.GetId()))
                     {
                         GetCodeLockLogger().WriteLog("acceSS", action_data.m_Player.GetIdentity(), codelock.GetPosition());
+                        
+                        #ifdef SERVER
+                        Msp_ItemBase mspitembase = Msp_ItemBase.Cast(action_data.m_Target.GetObject());
+                        if(mspitembase && mspitembase.IsMFVirtualStorageEnabled())
+                        {
+                            mspitembase.RestoreMFInventory(action_data.m_Player);
+                        }
+                        #endif
                         itemBase.Open();
                     }
                 }

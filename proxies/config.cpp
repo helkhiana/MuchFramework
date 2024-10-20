@@ -1091,8 +1091,40 @@ class CfgVehicles
 	{
 		inventorySlot[] +=
 		{
-			"Shoulder",
-			"Melee",
+			"fishingpole",
+			"fishingrod1",
+			"fishingrod2",
+			"fishingrod3",
+			"fishingrod4",
+			"fishingrod5",
+			"fishingrod6",
+			"fishingrod7",
+			"fishingrod8",
+			"fishingrod9",
+			"fishingrod10"
+		};
+	};
+	class FishingRod: FishingRod_Base_New
+	{
+		inventorySlot[] +=
+		{
+			"fishingpole",
+			"fishingrod1",
+			"fishingrod2",
+			"fishingrod3",
+			"fishingrod4",
+			"fishingrod5",
+			"fishingrod6",
+			"fishingrod7",
+			"fishingrod8",
+			"fishingrod9",
+			"fishingrod10"
+		};
+	};
+	class ImprovisedFishingRod: FishingRod_Base_New
+	{
+		inventorySlot[] +=
+		{
 			"fishingpole",
 			"fishingrod1",
 			"fishingrod2",

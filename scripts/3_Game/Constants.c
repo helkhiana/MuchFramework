@@ -7,7 +7,7 @@ class MSP_StorageRestrictions
 		"InjectionVial", "SalineBag", "StartKitIV", "SalineBagIV", "BloodBagEmpty", "BloodBagFull", "BloodBagIV",
 		"BloodTestKit", "Splint", "Thermometer", "Defibrillator", "DisinfectantSpray", "DisinfectantAlcohol", 
         "SewingKit", "Rag", "WG_Medkit_Base", "WG_EmergencyBandage", "WG_Surgicalkit_Base", "GasMask_Filter",
-        "GasMask_Filter_Improvised", "SurgicalGloves_ColorBase" 
+        "GasMask_Filter_Improvised", "SurgicalGloves_ColorBase", "ChelatingTablets"
     };
     static ref array<string> FishCargoItems = 
     {        
@@ -24,7 +24,10 @@ class MSP_StorageRestrictions
         "zeroy_pike",
         "SalmonFilletMeat",
         "zeroy_salmon",
-        "Bitterlings"
+        "Bitterlings",
+        "WalleyePollockFilletMeat",
+        "SteelheadTroutFilletMeat",
+        "RedCaviar"
     };
 };
 

@@ -315,15 +315,8 @@ class MF_Inventory
 	{	
 		m_Entity = entity;
 		m_Player = player;
-		if (!RestoreCargo(m_Entity))
-		{
-			return false;
-		}
-
-		if (!RestoreAttachments(m_Entity))
-		{
-			return false;
-		}
+		RestoreCargo(m_Entity);
+		RestoreAttachments(m_Entity);
 
 		m_Entity.AfterStoreLoad();
 		m_Entity.SetSynchDirty();
@@ -443,15 +436,8 @@ class MF_Inventory
 			}
 		}
 
-		if (!RestoreCargo(m_Entity))
-		{
-			return false;
-		}
-
-		if (!RestoreAttachments(m_Entity, heal))
-		{
-			return false;
-		}
+		RestoreCargo(m_Entity);
+		RestoreAttachments(m_Entity, heal);
 
 		m_Entity.AfterStoreLoad();
 		m_Entity.SetSynchDirty();
@@ -551,10 +537,7 @@ class MF_Inventory
 			{
 				cargo[i].m_Player = m_Player;
 			}
-			if (!cargo[i].RestoreSubEntity(parent))
-			{
-				return false;
-			}
+			cargo[i].RestoreSubEntity(parent);
 			if(!m_HadAFailure && cargo[i].m_HadAFailure)
 			{
 				m_HadAFailure = true;

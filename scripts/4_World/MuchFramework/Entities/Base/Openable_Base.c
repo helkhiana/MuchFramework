@@ -204,60 +204,55 @@ class Msp_OpenableContainer : Msp_ItemBase
 		{			
 			#ifdef RA_BASEBUILDING		
 				return GetMuchCodelockConfig() && GetMuchCodelockConfig().CanAttach();
-			#endif
-			
-			#ifdef CodeLock				
+        	#else
+				#ifdef CodeLock		
 				return GetMuchCodelockConfig() && GetMuchCodelockConfig().CanAttach();
-			#else
-				return false;
+				#endif
 			#endif
+			return false;
 		}
 		return super.CanDisplayAttachmentCategory(category_name);
 	}
 
-	//investigation needed
-    #ifdef CodeLock
+
     override bool CanReceiveAttachment(EntityAI attachment, int slotId)
     {
-        CodeLock c_Lock;
-        if (Class.CastTo(c_Lock, attachment))
-		{
-			return GetMuchCodelockConfig() && GetMuchCodelockConfig().CanAttach();
-		}
-
-        return super.CanReceiveAttachment(attachment, slotId);
-    }
-    #endif
-
-    #ifdef RA_BASEBUILDING
-    override bool CanReceiveAttachment(EntityAI attachment, int slotId)
-    {
+   	 	#ifdef RA_BASEBUILDING
         RA_CodeLock c_Lock;
         if (Class.CastTo(c_Lock, attachment))
 		{
 			return GetMuchCodelockConfig() && GetMuchCodelockConfig().CanAttach();
 		}
+		#else
+			#ifdef CodeLock		
+       		CodeLock c_Lock;
+			if (Class.CastTo(c_Lock, attachment))
+			{
+				return GetMuchCodelockConfig() && GetMuchCodelockConfig().CanAttach();
+			}			
+    		#endif
+    	#endif
 
         return super.CanReceiveAttachment(attachment, slotId);
     }
-    #endif
 
 	override void SetActions()
 	{
 		super.SetActions();
         AddAction(ActionCustomOpen);
         AddAction(ActionCustomClose);
-		#ifdef CodeLock
-        AddAction(ActionInteractLockOnMSP);
-        AddAction(ActionManageLockOnMSP);
-        AddAction(ActionLockAdminOnMSP);
-        #endif
 		
         #ifdef RA_BASEBUILDING
         AddAction(ActionRACodeLockAuthenticateOnMF);
         AddAction(ActionRACodeLockSetCodeOnMF);
         AddAction(ActionRaidRACodeLockOnMF);
-        #endif
+        #else
+			#ifdef CodeLock
+			AddAction(ActionInteractLockOnMSP);
+			AddAction(ActionManageLockOnMSP);
+			AddAction(ActionLockAdminOnMSP);
+			#endif
+		#endif
 	}
 };
 

@@ -106,7 +106,14 @@ class ActionRaidCodelockOnMSP : ActionContinuousBase
                 } 
                 else 
                 {
-                    codelock.UnlockServer(action_data.m_Player, itemBase);
+                    codelock.UnlockServer(action_data.m_Player, itemBase);                    
+                    #ifdef SERVER
+                    Msp_ItemBase mspitembase = Msp_ItemBase.Cast(action_data.m_Target.GetObject());
+                    if(mspitembase && mspitembase.IsMFVirtualStorageEnabled())
+                    {
+                        mspitembase.RestoreMFInventory(action_data.m_Player);
+                    }
+                    #endif
 
                     if (GetMuchCodelockConfig().ShouldDeleteLockOnRaid())
                         codelock.Delete();                        
