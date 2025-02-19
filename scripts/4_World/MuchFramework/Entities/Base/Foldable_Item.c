@@ -126,6 +126,12 @@ class Msp_Foldable_Item : Msp_Item
         }
     }
 
+    
+	override bool IsMspDismantleAllowed()
+	{   
+		return false;
+	}	
+
     override void SetActions()
     {
         super.SetActions();

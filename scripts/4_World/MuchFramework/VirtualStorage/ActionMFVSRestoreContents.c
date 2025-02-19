@@ -38,6 +38,11 @@ class ActionMFVSRestoreContents: ActionInteractBase
 				return false;
 			}
 
+			if(!mspitembase.MF_CanBeOpenedOrRestored())
+			{
+				return false;
+			}
+
 			if(mspitembase.HasStoredCargo())
 			{
 				m_Text = "Restore contents";

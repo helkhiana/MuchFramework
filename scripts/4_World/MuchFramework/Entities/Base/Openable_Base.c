@@ -33,13 +33,6 @@ class Msp_OpenableContainer : Msp_ItemBase
 		GetInventory().LockInventory(HIDE_INV_FROM_SCRIPT);
 	}
 
-#ifdef EXPANSIONMODBASEBUILDING
-	override bool IsNonExpansionOpenable()
-	{
-		return true;
-	}
-#endif	
-
 	override bool IsOpen()
 	{
 		return m_IsOpened;

@@ -11,6 +11,8 @@ class Msp_ItemBase : Container_Base
 	protected bool m_PrevHasStoredCargo = false;
 	protected bool m_HasAutoStoreEnabled = false;
 	protected bool m_HasAutoStoreOnCloseEnabled = false;
+	protected bool m_VSInProgress = false;
+	protected bool m_MFCanBeOpenedOrRestored = true;
 
 	ref MF_Inventory m_MFInventory;
 	protected bool m_StoreIsDirty = false;
@@ -18,6 +20,7 @@ class Msp_ItemBase : Container_Base
     protected int m_AutoStoreTimerInSeconds = -1;
 	protected bool m_HasAutoCloseEnabled = false;
     protected int m_AutoCloseTimerInSeconds = -1;
+	protected float m_VSMFCheckTimer = 2000;
 	protected PluginMFSettingsConfig MFSettings;
 
 	void Msp_ItemBase()
@@ -26,6 +29,8 @@ class Msp_ItemBase : Container_Base
 		RegisterNetSyncVariableBool("m_PrevHasStoredCargo");
 		RegisterNetSyncVariableBool("m_HasAutoStoreEnabled");
 		RegisterNetSyncVariableBool("m_HasAutoStoreOnCloseEnabled");
+		RegisterNetSyncVariableBool("m_VSInProgress");
+		RegisterNetSyncVariableBool("m_MFCanBeOpenedOrRestored");
 		MF_DisableContainerDamage();
 		m_HalfExtents = Vector(0.2,0.5,0.4);
 	}
@@ -71,7 +76,9 @@ class Msp_ItemBase : Container_Base
 	override void EEDelete(EntityAI parent)
 	{
 		super.EEDelete(parent);
+		#ifdef SERVER
 		DeleteMFInventoryFile();
+		#endif
 	}
 
 	void LoadMFStoreData()
@@ -205,7 +212,30 @@ class Msp_ItemBase : Container_Base
 		
 		return MF_Helper.IsAnyKindOf(item, m_AllowedMSPCargo);
 	}
-	
+
+	bool MF_CanBeOpenedOrRestored()
+	{
+		return m_MFCanBeOpenedOrRestored;
+	}
+
+	void DisableOpenOrRestore()
+	{
+		if(IsMFVirtualStorageEnabled())
+		{
+			m_MFCanBeOpenedOrRestored = false;		
+			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(ResetCanBeOpenedOrRestored, m_VSMFCheckTimer, false);
+		}
+	}	
+
+	void ResetCanBeOpenedOrRestored()
+	{
+		if(!m_MFCanBeOpenedOrRestored)
+		{
+			m_MFCanBeOpenedOrRestored = true;
+			SetSynchDirty();
+		}
+	}
+
     bool IsMspFacingPlayer( PlayerBase player)
 	{
 		vector fence_pos = GetPosition();
@@ -521,6 +551,8 @@ class Msp_ItemBase : Container_Base
 		{
 			return;
 		}
+		m_VSInProgress = true;
+		SetSynchDirty();
 		ref array<string> blacklist;
 		MF_VirtualStorage_Settings vsSettings = MFSettings.GetSettings().VirtualStorage;
 		if(vsSettings)
@@ -543,7 +575,7 @@ class Msp_ItemBase : Container_Base
 			
 			return;
 		}
-
+		DisableOpenOrRestore();
 		m_MFInventory = new MF_Inventory();
 		if(m_MFInventory.Store(this))
 		{
@@ -556,8 +588,19 @@ class Msp_ItemBase : Container_Base
 				Close();
 			}
 			MF_LockInventory();
-			SetSynchDirty();
 		}
+		m_VSInProgress = false;
+		SetSynchDirty();
+	}
+
+	
+	override bool CanDisplayCargo()
+	{
+		if(m_VSInProgress)
+		{
+			return false;
+		}
+		return super.CanDisplayCargo();
 	}
 
 	void SetContainerAsStored()
@@ -578,18 +621,25 @@ class Msp_ItemBase : Container_Base
 		{
 			return;
 		}
-		LoadMFInventoryFile();
+		m_VSInProgress = true;
+		SetSynchDirty();
+		if(!m_StoreIsDirty)
+		{
+			LoadMFInventoryFile();
+		}
 		if(m_MFInventory)
 		{
 			MF_UnlockInventory();
 			if(m_MFInventory)
 			{
+				//added this here to ensure items get deleted if for some reason they remained in inventory on store.
+				//to avoid dupes
+				MF_Helper.RemoveItemsInCargo(this);
 				if(!m_MFInventory.Restore(this, player) && player)
 				{
-					//GetGame().RPCSingleParam(player, ERPCs.RPC_WARNING_ITEMDROP, null, true, player.GetIdentity());
 					GetGame().RPCSingleParam(player, MUCH_RPC.RPC_CLIENT_SHOWWARNINGUI, null, true, player.GetIdentity());
-					//string reason = MF_Helper.GetDate() + ": One or multiple items have been dropped on the ground because they couldn't be restored in the inventory.";
-					//MF_Helper.SendMessageToClient(player, reason);
+					string reason = string.Format("[MuchFramework] %1 (%2) One or multiple items have been dropped on the ground because they couldn't be restored in the inventory.", Object.GetDebugName(this), GetPosition());
+					Error(reason);
 				}
 				m_PrevHasStoredCargo = true;
 				m_HasStoredCargo = false;
@@ -602,13 +652,17 @@ class Msp_ItemBase : Container_Base
 				{
 					MF_LockInventory();
 				}
+				m_VSInProgress = false;
 				SetSynchDirty();
 				return;
 			}
 			MF_Helper.RemoveItemsInCargo(this);
+			m_VSInProgress = false;
 			SetSynchDirty();
 			return;
 		}
+		m_VSInProgress = false;
+		SetSynchDirty();
 		delete m_MFInventory;
 	}
 

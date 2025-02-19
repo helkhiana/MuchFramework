@@ -42,7 +42,7 @@ class ActionCustomOpen: ActionInteractBase
 					return false;
 			#endif
 			
-			if(!mspitembase.IsOpen())
+			if(!mspitembase.IsOpen() && mspitembase.MF_CanBeOpenedOrRestored())
 			{
 				return true;
 			}
