@@ -17,10 +17,10 @@ class Msp_OpenableContainer : Msp_ItemBase
 	{
 		m_IsOpened = true;
 		ResetAutoMFTimer();
-		SoundSynchRemote();
 		UpdateVisualState();
 		GetInventory().UnlockInventory(HIDE_INV_FROM_SCRIPT);
 		super.Open();
+		SetSynchDirty();
 	}
 
 	override void Close()
@@ -28,9 +28,9 @@ class Msp_OpenableContainer : Msp_ItemBase
 		super.Close();
 		m_IsOpened = false;
 		ResetAutoMFTimer();
-		SoundSynchRemote();
 		UpdateVisualState();
 		GetInventory().LockInventory(HIDE_INV_FROM_SCRIPT);
+		SetSynchDirty();
 	}
 
 	override bool IsOpen()
@@ -44,12 +44,12 @@ class Msp_OpenableContainer : Msp_ItemBase
 		
 		if ( m_IsOpened != m_IsOpenedLocal )
 		{		
-			if ( IsOpen() && IsSoundSynchRemote() && !IsBeingPlaced() )
+			if ( IsOpen() && !IsBeingPlaced() )
 			{
 				SoundOpenPlay();
 			}
 			
-			if ( !IsOpen() && IsSoundSynchRemote() && !IsBeingPlaced() )
+			if ( !IsOpen() && !IsBeingPlaced() )
 			{
 				SoundClosePlay();
 			}	

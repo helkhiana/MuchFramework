@@ -222,7 +222,8 @@ class Msp_ItemBase : Container_Base
 	{
 		if(IsMFVirtualStorageEnabled())
 		{
-			m_MFCanBeOpenedOrRestored = false;		
+			m_MFCanBeOpenedOrRestored = false;	
+			SetSynchDirty();	
 			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(ResetCanBeOpenedOrRestored, m_VSMFCheckTimer, false);
 		}
 	}	
